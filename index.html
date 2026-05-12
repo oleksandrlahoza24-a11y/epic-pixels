@@ -1,428 +1,685 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Snowfield</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html, body { width:100%; height:100%; overflow:hidden; background:#000510; touch-action:none; -webkit-user-select:none; user-select:none; }
-  canvas { display:block; position:fixed; top:0; left:0; touch-action:none; cursor:crosshair; }
-  #ui {
-    position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
-    color:rgba(180,210,255,0.50);
-    font-family:'Share Tech Mono',monospace; font-size:11px;
-    letter-spacing:5px; text-transform:uppercase; pointer-events:none;
-    transition:opacity 2.5s; white-space:nowrap;
-    text-shadow:0 0 16px rgba(140,180,255,0.5);
-  }
-  #ui.fade { opacity:0; }
-  #badge {
-    position:fixed; top:20px; left:50%; transform:translateX(-50%);
-    color:rgba(180,210,255,0.28); font-family:'Share Tech Mono',monospace;
-    font-size:10px; letter-spacing:7px; pointer-events:none; white-space:nowrap;
-    text-shadow:0 0 10px rgba(140,180,255,0.3);
-  }
-  .corner { position:fixed; width:40px; height:40px; pointer-events:none; }
-  #c1 { top:0;    left:0;    border-top:1px solid rgba(140,180,255,0.22); border-left:1px solid rgba(140,180,255,0.22); }
-  #c2 { top:0;    right:0;   border-top:1px solid rgba(140,180,255,0.22); border-right:1px solid rgba(140,180,255,0.22); }
-  #c3 { bottom:0; left:0;    border-bottom:1px solid rgba(140,180,255,0.22); border-left:1px solid rgba(140,180,255,0.22); }
-  #c4 { bottom:0; right:0;   border-bottom:1px solid rgba(140,180,255,0.22); border-right:1px solid rgba(140,180,255,0.22); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ultra-Realistic Water</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #04111a;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    #hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(160, 220, 255, 0.55);
+      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+      font-size: 13px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      pointer-events: none;
+      transition: opacity 2.5s ease;
+      text-shadow: 0 0 20px rgba(80, 180, 255, 0.4);
+      white-space: nowrap;
+    }
+
+    #hint.fade {
+      opacity: 0;
+    }
+  </style>
 </head>
+
 <body>
-<canvas id="c"></canvas>
-<div class="corner" id="c1"></div><div class="corner" id="c2"></div>
-<div class="corner" id="c3"></div><div class="corner" id="c4"></div>
-<div id="badge">H₂O · CRYSTALLINE</div>
-<div id="ui">disturb the snow</div>
-<script>
-'use strict';
+  <canvas id="c"></canvas>
+  <div id="hint">∿ touch the water ∿</div>
+  <script>
+    'use strict';
+
 const canvas = document.getElementById('c');
-const ui     = document.getElementById('ui');
-const DPR    = Math.min(window.devicePixelRatio||1, 2);
-let W=0, H=0, CW=0, CH=0;
-function resize(){
-  CW=window.innerWidth; CH=window.innerHeight;
-  W=Math.round(CW*DPR); H=Math.round(CH*DPR);
-  canvas.width=W; canvas.height=H;
-  canvas.style.width=CW+'px'; canvas.style.height=CH+'px';
+const hint   = document.getElementById('hint');
+
+// ─── Retina / iPad DPR support ─────────────────────────────────────────────
+const DPR = Math.min(window.devicePixelRatio || 1, 3);
+let W = 0, H = 0;   // physical canvas pixels
+let CW = 0, CH = 0; // CSS layout pixels (event coordinates are in these)
+
+function resize() {
+  CW = window.innerWidth;
+  CH = window.innerHeight;
+  W  = Math.round(CW * DPR);
+  H  = Math.round(CH * DPR);
+  canvas.width        = W;
+  canvas.height       = H;
+  canvas.style.width  = CW + 'px';
+  canvas.style.height = CH + 'px';
 }
-resize(); window.addEventListener('resize', resize);
+resize();
+window.addEventListener('resize', resize);
 
-const gl = canvas.getContext('webgl',{antialias:false,alpha:false,powerPreference:'high-performance'})
-        || canvas.getContext('experimental-webgl',{antialias:false,alpha:false});
-if(!gl){ document.body.innerHTML='<p style="color:#adf;font-family:monospace;padding:40px">WebGL unavailable</p>'; throw 0; }
+// ─── WebGL init ─────────────────────────────────────────────────────────────
+const glOpts = { antialias:false, alpha:false, preserveDrawingBuffer:false, powerPreference:'high-performance' };
+const gl = canvas.getContext('webgl', glOpts)
+        || canvas.getContext('experimental-webgl', glOpts);
 
-const extFloat = gl.getExtension('OES_texture_float');
-const extHalfF = gl.getExtension('OES_texture_half_float');
-const extFL    = gl.getExtension('OES_texture_float_linear');
-const extHL    = gl.getExtension('OES_texture_half_float_linear');
+if (!gl) {
+  document.body.style.cssText = 'background:#030c12;display:flex;align-items:center;justify-content:center';
+  document.body.innerHTML = '<p style="color:#7ad;font-family:serif;font-size:18px;text-align:center;line-height:2">WebGL not available<br><small style="opacity:.5">Try Chrome or Safari</small></p>';
+  throw 0;
+}
+
+// Extensions
+const extFloat    = gl.getExtension('OES_texture_float');
+const extHalfF    = gl.getExtension('OES_texture_half_float');
+const extFloatLin = gl.getExtension('OES_texture_float_linear');
+const extHalfLin  = gl.getExtension('OES_texture_half_float_linear');
 gl.getExtension('WEBGL_color_buffer_float');
 gl.getExtension('EXT_color_buffer_half_float');
 
-function canRT(type){
-  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,4,4,0,gl.RGBA,type,null);
-  const f=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,f);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);
-  const ok=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE;
-  gl.deleteFramebuffer(f); gl.deleteTexture(t); gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+function canRenderTo(type) {
+  const t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, type, null);
+  const f = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  gl.deleteFramebuffer(f); gl.deleteTexture(t);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   return ok;
 }
-let FTYPE, ULIN, UINT8;
-if(extFloat&&canRT(gl.FLOAT)){FTYPE=gl.FLOAT;ULIN=!!extFL;UINT8=false;}
-else if(extHalfF&&canRT(extHalfF.HALF_FLOAT_OES)){FTYPE=extHalfF.HALF_FLOAT_OES;ULIN=!!extHL;UINT8=false;}
-else{FTYPE=gl.UNSIGNED_BYTE;ULIN=true;UINT8=true;}
 
-const S = 512;
+// Pick best available float format for FBO rendering
+let FTYPE, USE_LINEAR, UINT8;
+if (extFloat && canRenderTo(gl.FLOAT)) {
+  FTYPE = gl.FLOAT; USE_LINEAR = !!extFloatLin; UINT8 = false;
+} else if (extHalfF && canRenderTo(extHalfF.HALF_FLOAT_OES)) {
+  FTYPE = extHalfF.HALF_FLOAT_OES; USE_LINEAR = !!extHalfLin; UINT8 = false;
+} else {
+  // iPad / older devices fall here — uint8 with 16-bit encoding fixes quantisation pixels
+  FTYPE = gl.UNSIGNED_BYTE; USE_LINEAR = true; UINT8 = true;
+}
 
-const VERT = `attribute vec2 aPos; varying vec2 vUV;
-void main(){ vUV=aPos*.5+.5; gl_Position=vec4(aPos,0,1); }`;
+const S = 1024; // simulation grid (square)
 
-// --- Simulation shader (snow physics: higher damping, absorbing boundary) ---
-const SIM = (UINT8?'#define U8\n':'') + `
+// ─── Shader: vertex (shared) ────────────────────────────────────────────────
+const VERT = `
+attribute vec2 aPos;
+varying   vec2 vUV;
+void main() {
+  vUV = aPos * 0.5 + 0.5;
+  gl_Position = vec4(aPos, 0.0, 1.0);
+}`;
+
+// ─── Shader: simulation ─────────────────────────────────────────────────────
+// FIX: On uint8 devices (iPad), we use 16-bit fixed-point:
+//   curr height → R (hi byte) + G (lo byte)
+//   prev height → B (hi byte) + A (lo byte)
+// This gives ~65000 precision levels vs 256, eliminating pixel-block artefacts.
+const SIM_FRAG = (UINT8 ? '#define UINT8_MODE\n' : '') + `
 precision highp float;
-varying vec2 vUV;
-uniform sampler2D uS;
-uniform vec2 uTx;
-uniform vec2 uM;
-uniform float uR, uStr;
-#ifdef U8
-  vec2 enc(float v){float t=clamp(v*.5+.5,0.,.99999)*255.;return vec2(floor(t)/255.,fract(t));}
-  float dec(vec2 v){return(v.x+v.y/255.)*2.-1.;}
-  float C(vec2 u){return dec(texture2D(uS,u).rg);}
-  float P(vec2 u){return dec(texture2D(uS,u).ba);}
+varying vec2  vUV;
+uniform sampler2D uState;
+uniform vec2  uTexel;
+uniform vec2  uMouse;
+uniform float uRadius;
+uniform float uStrength;
+
+#ifdef UINT8_MODE
+  // Encode float [-1,1] → two bytes stored in vec2([0,1])
+  // hi = integer part of t*255 / 255
+  // lo = fractional part of t*255  (full [0,1) range for sub-byte precision)
+  vec2 enc16(float v) {
+    float t   = clamp(v * 0.5 + 0.5, 0.0, 0.99999);
+    float t255 = t * 255.0;
+    return vec2(floor(t255) / 255.0, fract(t255));
+  }
+  // Decode: (hi + lo/255) * 2 - 1
+  float dec16(vec2 v) { return (v.x + v.y / 255.0) * 2.0 - 1.0; }
+  float CURR(vec2 uv) { return dec16(texture2D(uState, uv).rg); }
+  float PREV(vec2 uv) { return dec16(texture2D(uState, uv).ba); }
 #else
-  float C(vec2 u){return texture2D(uS,u).r*2.-1.;}
-  float P(vec2 u){return texture2D(uS,u).g*2.-1.;}
+  float CURR(vec2 uv) { return texture2D(uState, uv).r * 2.0 - 1.0; }
+  float PREV(vec2 uv) { return texture2D(uState, uv).g * 2.0 - 1.0; }
 #endif
-void main(){
-  float c=C(vUV), p=P(vUV);
-  float n=C(vUV+vec2(0.,uTx.y)), s=C(vUV-vec2(0.,uTx.y)),
-        e2=C(vUV+vec2(uTx.x,0.)), w=C(vUV-vec2(uTx.x,0.));
-  // Snow: higher damping (.991) — settles slower, less elastic than water
-  float nx = (-p + (n+s+e2+w)*.5) * .991;
-  // Strongly absorbing boundary — no wave reflections off edges
-  float bx=min(vUV.x,1.-vUV.x)*16., by=min(vUV.y,1.-vUV.y)*16.;
-  nx *= mix(.58, 1., clamp(min(bx,by),0.,1.));
-  float dist = length(vUV - uM);
-  nx -= smoothstep(uR, 0., dist) * uStr;
-  nx = clamp(nx, -1., 1.);
-  #ifdef U8
-    gl_FragColor = vec4(enc(nx), enc(c));
+
+void main() {
+  float curr = CURR(vUV);
+  float prev = PREV(vUV);
+
+  float n = CURR(vUV + vec2( 0.0,      uTexel.y));
+  float s = CURR(vUV - vec2( 0.0,      uTexel.y));
+  float e = CURR(vUV + vec2( uTexel.x, 0.0     ));
+  float w = CURR(vUV - vec2( uTexel.x, 0.0     ));
+
+  // ── Diagonal neighbours for more isotropic wave propagation ──────────────
+  float ne = CURR(vUV + vec2( uTexel.x,  uTexel.y));
+  float nw = CURR(vUV + vec2(-uTexel.x,  uTexel.y));
+  float se = CURR(vUV + vec2( uTexel.x, -uTexel.y));
+  float sw = CURR(vUV + vec2(-uTexel.x, -uTexel.y));
+
+  // Isotropic wave equation — combines cardinal and diagonal taps
+  // Cardinal weight 0.5, diagonal weight 0.25 → Courant stable, rounder wavefronts
+  float laplacian = (n + s + e + w) * 0.5 + (ne + nw + se + sw) * 0.25 - curr * 3.0;
+  float next = curr * 2.0 - prev + laplacian * 0.28;
+
+  // Nonlinear damping — calm water fades faster, active waves persist longer
+  float energy = abs(next);
+  float damp = mix(0.9985, 0.9998, smoothstep(0.0, 0.3, energy));
+  next *= damp;
+
+  // Dispersion — slightly slow down very short wavelengths for realism
+  float shortWave = abs(laplacian) * 0.004;
+  next -= shortWave * sign(next);
+
+  // Sponge-layer: absorb at borders to kill reflections
+  float bx = min(vUV.x, 1.0 - vUV.x) * 18.0;
+  float by = min(vUV.y, 1.0 - vUV.y) * 18.0;
+  next *= mix(0.72, 1.0, clamp(min(bx, by), 0.0, 1.0));
+
+  // Pointer / drop disturbance
+  float d = length(vUV - uMouse);
+  next -= smoothstep(uRadius, 0.0, d) * uStrength;
+  next  = clamp(next, -1.0, 1.0);
+
+  #ifdef UINT8_MODE
+    gl_FragColor = vec4(enc16(next), enc16(curr));
   #else
-    gl_FragColor = vec4(nx*.5+.5, c*.5+.5, 0., 1.);
+    gl_FragColor = vec4(next * 0.5 + 0.5, curr * 0.5 + 0.5, 0.0, 1.0);
   #endif
 }`;
 
-// --- Render shader: snow surface + falling flakes + night atmosphere ---
-const RENDER = (UINT8?'#define U8\n':'') + `
+// ─── Shader: render ─────────────────────────────────────────────────────────
+const RENDER_FRAG = (UINT8 ? '#define UINT8_MODE\n' : '') + `
 precision highp float;
-varying vec2 vUV;
-uniform sampler2D uW;
-uniform vec2 uTx;
-uniform float uTime, uAspect;
+varying vec2  vUV;
+uniform sampler2D uWater;
+uniform vec2  uTexel;
+uniform float uTime;
+uniform float uAspect;
 
-float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
-
-float vnoise(vec2 p){
-  vec2 i=floor(p), f=p-i;
-  f=f*f*(3.-2.*f);
-  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),
-             mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);
+// ── Noise ─────────────────────────────────────────────────────────────────
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = p - i;
+  f = f*f*(3.0 - 2.0*f);
+  return mix(mix(hash(i),         hash(i+vec2(1,0)), f.x),
+             mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y);
 }
-float fbm(vec2 p){
-  float v=0., a=.5;
-  for(int i=0;i<5;i++){v+=vnoise(p)*a; p*=2.1; a*=.5;}
+float fbm(vec2 p) {
+  float v=0.0, a=0.5;
+  for(int i=0;i<5;i++){ v+=vnoise(p)*a; p*=2.1; a*=0.5; }
   return v;
 }
 
-#ifdef U8
-  float H(vec2 uv){ vec4 s=texture2D(uW,uv); return(s.r+s.g/255.)*2.-1.; }
-#else
-  float H(vec2 uv){ return texture2D(uW,uv).r*2.-1.; }
-#endif
-
-float GGX(float ndh, float r){ float a=r*r*r*r, d=ndh*ndh*(a-1.)+1.; return a/(3.14159*d*d+1e-5); }
-
-// One layer of falling snowflakes (procedural tiling)
-float snowLayer(vec2 uv, float t, float scale, float speed, float windPhase, float sz){
-  // Wind: gentle horizontal oscillation per layer
-  float wx = sin(t*0.14 + windPhase)*0.45 + sin(t*0.09 + windPhase*1.7)*0.25;
-  vec2 sg = uv * scale + vec2(wx * t * 0.055, -t * speed);
-  vec2 si = floor(sg);
-  vec2 sf = fract(sg);
-  float h1 = hash(si);
-  float h2 = hash(si + vec2(47.3, 0.));
-  float h3 = hash(si + vec2(0.,  91.7));
-  // ~28% of grid cells contain a flake
-  float active = step(h3, 0.28);
-  vec2 center = vec2(0.15 + h1*0.70, 0.15 + h2*0.70);
-  float dist   = length(sf - center);
-  float r      = sz * (0.45 + h1*0.55);
-  // Soft bright core + faint glow halo
-  float core = smoothstep(r, r*0.05, dist);
-  float halo = smoothstep(r*2.8, 0., dist) * 0.28;
-  return (core + halo) * active * (0.45 + h2*0.55);
+// ── Sky dome ──────────────────────────────────────────────────────────────
+vec3 getSky(vec2 dir) {
+  float t   = clamp(dir.y * 1.6, 0.0, 1.0);
+  vec3 sky  = mix(vec3(0.48, 0.72, 0.96), vec3(0.05, 0.22, 0.68), t*t);
+  // Sun disc
+  vec2 sunD = normalize(vec2(0.35, 0.72));
+  float sd  = dot(normalize(dir), sunD);
+  sky += vec3(1.00, 0.97, 0.80) * pow(max(sd, 0.0), 200.0) * 4.0;
+  sky += vec3(1.00, 0.78, 0.42) * pow(max(sd, 0.0),   5.0) * 0.45;
+  // Soft clouds
+  float cl = fbm(dir*5.0+3.7) * fbm(dir*3.0+1.2);
+  sky = mix(sky, vec3(0.92, 0.95, 1.00), smoothstep(0.35,0.65,cl)*0.5*(1.0-t));
+  return sky;
 }
 
-void main(){
-  vec2 uv = vUV;
-  float t  = uTime;
+// ── Seabed ────────────────────────────────────────────────────────────────
+vec3 getSeabed(vec2 uv) {
+  float dr = uTime * 0.018;
 
-  // ----- Normal from height field (Sobel) -----
-  vec2 tx = uTx * 2.0;
-  float hC  = H(uv);
-  float hL  = H(uv - vec2(tx.x, 0.));
-  float hR  = H(uv + vec2(tx.x, 0.));
-  float hU  = H(uv + vec2(0., tx.y));
-  float hD  = H(uv - vec2(0., tx.y));
+  // ── Base sand ripples — two overlapping sine patterns ────────────────────
+  float ripple1 = sin(uv.x*38.0 + fbm(uv*5.0+dr)*6.0 + uv.y*12.0)*0.5+0.5;
+  float ripple2 = sin(uv.y*30.0 + fbm(uv*4.2+1.7+dr)*5.0 + uv.x*8.0)*0.5+0.5;
+  float ripple3 = sin((uv.x+uv.y)*22.0 + fbm(uv*3.0+dr*0.7)*4.0)*0.5+0.5;
+  float det = fbm(uv*18.0 + dr*0.4);
+  float sandMix = ripple1*0.4 + ripple2*0.35 + ripple3*0.25;
+  vec3 sandLight = vec3(0.82, 0.71, 0.46);
+  vec3 sandDark  = vec3(0.62, 0.50, 0.30);
+  vec3 base = mix(sandDark, sandLight, sandMix * pow(det, 0.4));
+
+  // ── Wet sand darkening in depressions ────────────────────────────────────
+  float wet = smoothstep(0.55, 0.35, sandMix) * 0.4;
+  base = mix(base, base * vec3(0.60, 0.55, 0.42), wet);
+
+  // ── Large rocks with mossy tops ──────────────────────────────────────────
+  float rockMask = smoothstep(0.52, 0.74, fbm(uv*3.2+2.3));
+  float rockDetail = fbm(uv*11.0+4.1)*0.5+0.5;
+  vec3 rockCol = vec3(0.38,0.34,0.29) * (0.6 + 0.4*rockDetail);
+  // Moss on top of rocks
+  float moss = smoothstep(0.58, 0.78, fbm(uv*9.0+7.2)) * rockMask;
+  rockCol = mix(rockCol, vec3(0.18,0.32,0.14), moss*0.7);
+  base = mix(base, rockCol, rockMask*0.85);
+
+  // ── Scattered small pebbles ───────────────────────────────────────────────
+  vec2 pCell = floor(uv*100.0);
+  float pRand = hash(pCell);
+  float pDist = length(fract(uv*100.0) - vec2(hash(pCell+0.1), hash(pCell+0.2)));
+  float pebble = smoothstep(0.32, 0.18, pDist) * step(0.62, pRand);
+  vec3 pebbleCol = mix(vec3(0.55,0.50,0.42), vec3(0.30,0.28,0.25), hash(pCell+0.5));
+  base = mix(base, pebbleCol, pebble*0.9);
+
+  // ── Dense seaweed patches ─────────────────────────────────────────────────
+  float weedMask = smoothstep(0.58,0.80,fbm(uv*7.0+5.8))
+                 * smoothstep(0.52,0.70,fbm(uv*4.5+8.3));
+  // Seaweed sways gently with time
+  vec2 weedUV = uv + vec2(sin(uTime*0.4+uv.y*8.0)*0.008, 0.0);
+  float weedDetail = fbm(weedUV*14.0+dr)*0.5+0.5;
+  vec3 weedCol = mix(vec3(0.08,0.28,0.10), vec3(0.18,0.45,0.15), weedDetail);
+  base = mix(base, weedCol, weedMask*0.80);
+  // Lighter tips on seaweed
+  float tips = smoothstep(0.65,0.85,weedDetail) * weedMask;
+  base = mix(base, vec3(0.30,0.60,0.22), tips*0.5);
+
+  // ── Coral patches ─────────────────────────────────────────────────────────
+  float coralMask = smoothstep(0.62,0.78,fbm(uv*6.0+11.3))
+                  * (1.0 - rockMask)
+                  * (1.0 - weedMask*0.8);
+  float coralType = hash(floor(uv*12.0));
+  vec3 coralCol = coralType > 0.6
+    ? vec3(0.90, 0.35, 0.25)   // red coral
+    : coralType > 0.3
+      ? vec3(0.95, 0.65, 0.20) // orange coral
+      : vec3(0.85, 0.30, 0.55); // pink coral
+  float coralDetail = fbm(uv*20.0+2.2)*0.5+0.5;
+  base = mix(base, coralCol * (0.7+0.3*coralDetail), coralMask*0.75);
+
+  // ── Shell fragments ───────────────────────────────────────────────────────
+  vec2 sCell = floor(uv*60.0);
+  float sRand = hash(sCell+7.7);
+  float sDist = length(fract(uv*60.0) - vec2(0.5));
+  float shell = smoothstep(0.28,0.10,sDist) * step(0.82, sRand);
+  vec3 shellCol = mix(vec3(0.92,0.88,0.80), vec3(0.75,0.65,0.55), hash(sCell+3.3));
+  base = mix(base, shellCol, shell*0.95);
+
+  // ── Overall depth tint — deeper blue in flat areas ────────────────────────
+  float depth = 1.0 - smoothstep(0.35, 0.65, sandMix);
+  base = mix(base, base * vec3(0.65, 0.80, 0.90), depth*0.25);
+
+  return base;
+}
+
+// ── Height fetch (handles UINT8 16-bit encoding) ──────────────────────────
+#ifdef UINT8_MODE
+  float H(vec2 uv) {
+    vec4 s = texture2D(uWater, uv);
+    return (s.r + s.g / 255.0) * 2.0 - 1.0;
+  }
+#else
+  float H(vec2 uv) { return texture2D(uWater, uv).r * 2.0 - 1.0; }
+#endif
+
+// ── GGX microfacet specular (replaces Phong — realistic water sparkle) ────
+float GGX(float NdotH, float rough) {
+  float a2 = rough*rough*rough*rough;
+  float d  = NdotH*NdotH*(a2-1.0)+1.0;
+  return a2 / (3.14159*d*d + 1e-5);
+}
+
+void main() {
+  vec2 uv = vUV;
+  vec2 tx = uTexel * 2.0;
+
+  // ── Sobel normal from height field (8-tap, smoother than 4-tap) ─────────
+  float hL  = H(uv - vec2(tx.x, 0.0));
+  float hR  = H(uv + vec2(tx.x, 0.0));
+  float hU  = H(uv + vec2(0.0,  tx.y));
+  float hD  = H(uv - vec2(0.0,  tx.y));
   float hLU = H(uv + vec2(-tx.x,  tx.y));
   float hRU = H(uv + vec2( tx.x,  tx.y));
   float hLD = H(uv + vec2(-tx.x, -tx.y));
   float hRD = H(uv + vec2( tx.x, -tx.y));
-  float ns  = 5.2;
-  float dX  = (hRD + 2.*hR + hRU - hLD - 2.*hL - hLU)*ns/uAspect;
-  float dY  = (hLU + 2.*hU + hRU - hLD - 2.*hD - hRD)*ns;
-  vec3 N    = normalize(vec3(-dX, -dY, 1.));
 
-  vec3 V  = vec3(0., 0., 1.);
-  // Moonlight: high, slightly off-axis
-  vec3 moonDir = normalize(vec3(-0.18, 0.55, 1.));
-  vec3 halfV   = normalize(V + moonDir);
+  float ns = 4.8;
+  float dX = (hRD + 2.0*hR + hRU - hLD - 2.0*hL - hLU) * ns / uAspect;
+  float dY = (hLU + 2.0*hU + hRU - hLD - 2.0*hD - hRD) * ns;
+  vec3 normal = normalize(vec3(-dX, -dY, 1.0));
 
-  float moonDiff = max(dot(N, moonDir), 0.);
-  float NdotH    = max(dot(N, halfV), 0.);
-  float cosI     = max(dot(N, V), 0.);
-  float fresnel  = clamp(0.04 + 0.96*pow(1.-cosI, 5.), 0., 1.);
+  float h   = H(uv);
+  vec3  V   = vec3(0.0, 0.0, 1.0);
+  vec3  L   = normalize(vec3(0.40, 0.68, 1.0));
+  vec3  Hv  = normalize(V + L);   // halfway vector
 
-  // ----- Snow surface color -----
-  // Deep crevice (blue-violet shadow) → mid-slope → bright peak
-  vec3 creviceCol = vec3(0.030, 0.070, 0.200);
-  vec3 midCol     = vec3(0.520, 0.680, 0.880);
-  vec3 peakCol    = vec3(0.880, 0.940, 1.000);
+  // ── Fresnel (Schlick, water IOR 1.333) ───────────────────────────────────
+  float cosI   = max(dot(normal, V), 0.0);
+  float fresnel = 0.020 + 0.980 * pow(1.0 - cosI, 5.0);
+  fresnel = clamp(fresnel, 0.0, 1.0);
 
-  float hNorm = clamp(hC*2.6 + 0.50, 0., 1.);
-  vec3 surfCol = mix(creviceCol, midCol,  smoothstep(0., 0.5, hNorm));
-  surfCol      = mix(surfCol,    peakCol, smoothstep(0.5, 1., hNorm));
+  // ── Refraction ───────────────────────────────────────────────────────────
+  vec2 refOff = vec2(normal.x / uAspect, normal.y) * 0.065;
+  vec2 refUV  = clamp(uv + refOff, 0.001, 0.999);
+  vec3 seabed = getSeabed(refUV + vec2(uTime * 0.003, 0.0));
 
-  // Micro-texture (grain + large undulation)
-  float grain   = fbm(uv*42. + t*0.018);
-  float undulate = fbm(uv*9.  + t*0.008 + 3.7);
-  surfCol *= 0.80 + grain*0.28;
-  surfCol  = mix(surfCol, peakCol, undulate*0.12);
+  // Beer-Lambert water extinction
+  seabed *= exp(-vec3(0.70, 0.12, 0.04) * 2.5);
 
-  // Ambient occlusion: dark crevices, bright crests
-  float ao = clamp(hC*3.2 + 0.55, 0., 1.);
-  surfCol *= mix(0.18, 1.0, ao);
+  // ── Underwater light rays (god rays through surface) ─────────────────────
+  // Ray direction based on surface normal perturbation
+  vec2 rayDir = vec2(normal.x * 0.8, normal.y * 0.8);
+  float rayLen = 0.18;
+  float rays = 0.0;
+  // March 6 steps along ray direction sampling height field
+  for (int r = 0; r < 6; r++) {
+    float t = float(r) / 5.0;
+    vec2 rayUV = refUV + rayDir * rayLen * t;
+    float rayH = H(clamp(rayUV, 0.001, 0.999));
+    // Bright where surface is peaked (focusing light downward)
+    rays += smoothstep(0.0, 0.35, rayH) * (1.0 - t * 0.6);
+  }
+  rays /= 6.0;
+  // Animate the rays with time and add noise for natural scatter
+  float rayNoise = fbm(refUV * 6.0 + uTime * 0.4) * 0.5 + 0.5;
+  float rayNoise2 = fbm(refUV * 12.0 - uTime * 0.3 + 2.1) * 0.5 + 0.5;
+  rays *= rayNoise * rayNoise2;
+  // Light ray color — warm sunlight filtering through water
+  vec3 rayCol = vec3(0.55, 0.90, 0.75) * rays * 1.8;
+  seabed += rayCol;
+  // Secondary deep blue scatter between rays
+  float scatter = (1.0 - rays) * fbm(refUV * 4.0 + uTime * 0.2) * 0.12;
+  seabed += vec3(0.02, 0.08, 0.22) * scatter;
 
-  // Moonlight diffuse + cold ambient fill
-  vec3 moonColor = vec3(0.70, 0.82, 1.00);
-  vec3 ambColor  = vec3(0.05, 0.09, 0.22);
-  surfCol *= ambColor + moonColor * moonDiff * 1.15;
+  // ── Caustics ─────────────────────────────────────────────────────────────
+  // 1) Surface curvature (wave focusing)
+  float lap = hU + hD + hL + hR - 4.0*h;
+  float curvCaus = pow(max(0.0, -lap * 9.0), 1.6) * 2.0;
+  // 2) Animated interference pattern
+  vec2 cUV = refUV * vec2(uAspect*12.0, 12.0);
+  float ca = sin(cUV.x*1.9 + uTime*2.5)*sin(cUV.y*1.8 + uTime*2.1)
+           + sin(cUV.x*1.3 - uTime*1.7 + 1.1)*sin(cUV.y*1.4 - uTime*2.0 + 0.8)
+           + sin((cUV.x+cUV.y)*1.1 + uTime*1.4)*0.5;
+  float animCaus = pow(max(0.0, ca*0.2+0.5), 3.8) * 0.6;
+  seabed *= 1.0 + curvCaus + animCaus;
 
-  // Subsurface scatter: snow glows blue-white at crests under light
-  float sss = smoothstep(0., 0.35, hC) * moonDiff;
-  surfCol  += vec3(0.55, 0.72, 1.00) * sss * 0.28;
+  // ── Sky reflection ────────────────────────────────────────────────────────
+  vec3 R   = reflect(-L, normal);
+  vec3 sky = getSky(R.xy * 0.5 + 0.5);
 
-  // Ice crystal sparkle — two animated frames for twinkle
-  float spHash1 = hash(floor(uv*195. + floor(t*3.5)*79.1));
-  float spHash2 = hash(floor(uv*240. + floor(t*4.2 + 1.)*61.3));
-  float sparkle = (step(0.974, spHash1) + step(0.971, spHash2)*0.6) * moonDiff * clamp(hC*3.5, 0., 1.);
-  surfCol += vec3(0.94, 0.97, 1.00) * sparkle * 1.6;
+  // ── Water body tint ───────────────────────────────────────────────────────
+  vec3 deepCol    = vec3(0.008, 0.07, 0.20);
+  vec3 shallowCol = vec3(0.05,  0.36, 0.62);
+  vec3 waterCol   = mix(deepCol, shallowCol, clamp(0.5 + h*2.0, 0.0, 1.0));
 
-  // GGX specular (sharp moonlight glint on ice facets)
-  float rough = max(0.012, 0.018 + abs(hC)*0.07);
-  surfCol += moonColor * GGX(NdotH, rough) * moonDiff * 0.30 * fresnel;
+  // ── Compose via Fresnel ───────────────────────────────────────────────────
+  vec3 col = mix(seabed, sky, clamp(fresnel*0.90 + 0.05, 0.0, 1.0));
+  col = mix(col, waterCol, 0.18);
 
-  // Rim/edge glow — backlit translucency at ridge edges
-  vec3 backL  = normalize(vec3(0.45, -0.25, 0.80));
-  float rim   = pow(max(0., 1.-cosI), 2.8) * max(0., dot(N, backL));
-  surfCol    += vec3(0.40, 0.60, 1.00) * rim * 0.20;
+  // ── Sub-surface scattering (light through wave crests) ───────────────────
+  float sss = smoothstep(-0.05, 0.30, h) * max(0.0, dot(normal, L));
+  col += vec3(0.00, 0.50, 0.72) * sss * 0.30;
 
-  // Laplacian (crest/trough curvature) — extra brightening on peaks
-  float lap  = hU + hD + hL + hR - 4.*hC;
-  float crest = smoothstep(0., 0.35, hC);
-  surfCol    += vec3(0.75, 0.88, 1.00) * crest * max(0., -lap*5.) * 0.40;
+  // ── GGX specular ─────────────────────────────────────────────────────────
+  float rough  = max(0.012, 0.012 + abs(h)*0.08);  // rougher at crests
+  float NdotH  = max(dot(normal, Hv), 0.0);
+  float NdotL  = max(dot(normal, L),  0.0);
+  float spec   = GGX(NdotH, rough);
+  col += vec3(1.00, 0.97, 0.88) * spec * NdotL * 0.20 * fresnel;
+  // Wide shimmer halo
+  float RdotV  = max(dot(R, V), 0.0);
+  col += vec3(0.82, 0.91, 1.00) * pow(RdotV, 40.0) * 0.22;
 
-  // ----- Night sky (visible in deep troughs via Fresnel) -----
-  vec3 skyCol = vec3(0.008, 0.014, 0.048);
-  // Stars: fine random field
-  float starH  = hash(floor(uv*820.));
-  float starH2 = hash(floor(uv*1240.));
-  skyCol += step(0.994, starH)  * vec3(0.90, 0.94, 1.00) * 0.75;
-  skyCol += step(0.996, starH2) * vec3(0.80, 0.88, 1.00) * 0.45;
-  // Subtle aurora ribbon — thin horizontal glow
-  float aurora = smoothstep(0.60, 0.75, vUV.y) * smoothstep(0.95, 0.75, vUV.y);
-  aurora      *= (sin(uv.x*8.+t*0.22)*0.5+0.5) * (vnoise(uv*3.+t*0.1)*0.6+0.4);
-  skyCol      += vec3(0.10, 0.55, 0.38) * aurora * 0.55;
+  // ── Foam at wave crests ───────────────────────────────────────────────────
+  float crest = smoothstep(0.14, 0.38, h);
+  float foamN1 = pow(fbm(uv*22.0 + uTime*0.8), 1.2);
+  float foamN2 = pow(fbm(uv*44.0 - uTime*0.5 + 3.7), 1.6);
+  float foamN3 = pow(fbm(uv*11.0 + uTime*0.3 + 1.1), 1.0);
+  float foamMask = foamN1 * 0.5 + foamN2 * 0.3 + foamN3 * 0.2;
+  // Foam thickness varies with wave height
+  float foamThick = smoothstep(0.10, 0.45, h) * foamMask;
+  col = mix(col, vec3(0.97, 0.99, 1.00), foamThick * 0.92);
+  // Foam edge bubble detail
+  float bubbles = step(0.72, hash(floor(uv * 180.0 + uTime * 0.3)));
+  col = mix(col, vec3(1.00, 1.00, 1.00), bubbles * crest * 0.35);
+  // Trailing wake foam with fadeout
+  float wake = smoothstep(0.05, 0.22, abs(h)) * fbm(uv*18.0 + uTime*0.4) * 0.18;
+  float wakeDetail = fbm(uv*36.0 - uTime*0.6) * 0.5 + 0.5;
+  col += vec3(0.75, 0.88, 1.00) * wake * wakeDetail;
+  // Thin foam streaks along troughs
+  float streak = smoothstep(0.60, 0.80, fbm(uv*8.0 + uTime*0.15)) * smoothstep(-0.25, -0.05, h) * 0.12;
+  col += vec3(0.80, 0.90, 1.00) * streak;
 
-  // Fresnel-weighted sky reflection in deep trough areas
-  float skyMix = clamp(fresnel*0.35 + (1.-ao)*0.12, 0., 1.);
-  surfCol = mix(surfCol, skyCol*0.6 + moonColor*0.25, skyMix);
+  // ── Horizon haze ─────────────────────────────────────────────────────────
+  float fog = pow(clamp(1.0 - vUV.y*1.6, 0.0, 1.0), 4.0) * 0.22;
+  col = mix(col, vec3(0.26, 0.52, 0.80), fog);
 
-  // Deepen the blue tint in shadowed/low areas
-  vec3 deepBlue = vec3(0.015, 0.035, 0.120);
-  surfCol = mix(surfCol, deepBlue, clamp(0.55 - hC*2.0, 0., 1.) * 0.50);
+  // ── Vignette ─────────────────────────────────────────────────────────────
+  vec2 vd = (vUV*2.0-1.0) * vec2(uAspect, 1.0);
+  col *= clamp(1.0 - dot(vd,vd)*0.055, 0.0, 1.0);
 
-  // ----- Falling snowflakes (5 parallax layers) -----
-  // Larger scale = farther away = smaller, faster (closer in depth map)
-  float flakes = 0.;
-  flakes += snowLayer(uv, t,  36., 0.110, 0.00, 0.0190) * 1.00;
-  flakes += snowLayer(uv, t,  58., 0.165, 1.83, 0.0140) * 0.88;
-  flakes += snowLayer(uv, t,  88., 0.230, 3.57, 0.0095) * 0.74;
-  flakes += snowLayer(uv, t, 130., 0.310, 5.20, 0.0065) * 0.58;
-  flakes += snowLayer(uv, t, 190., 0.400, 7.40, 0.0042) * 0.42;
-  flakes  = clamp(flakes, 0., 1.);
+  // ── Filmic tone-map + gamma ───────────────────────────────────────────────
+  col = col*(1.0+col*0.14)/(col+0.9)*1.08;
+  col = pow(max(col, vec3(0.0)), vec3(1.0/2.2));
 
-  // Flakes: cold white with faint blue tint, brightened by moonlight
-  vec3 flakeCol = mix(vec3(0.85, 0.90, 1.00), vec3(0.98, 0.99, 1.00), flakes);
-  surfCol = mix(surfCol, flakeCol, flakes * 0.88);
-  // Additive bloom so flakes glow against dark bg
-  surfCol += vec3(0.60, 0.72, 1.00) * flakes * 0.35;
-
-  // ----- Vignette -----
-  vec2 vd = (vUV*2.-1.) * vec2(uAspect, 1.);
-  surfCol *= clamp(1. - dot(vd,vd)*0.068, 0., 1.);
-
-  // ----- Tone-map + gamma -----
-  // Slightly cool (blue channel lifted a touch)
-  surfCol.b = min(surfCol.b * 1.04, 1.0);
-  surfCol = surfCol*(1.+surfCol*0.14)/(surfCol+0.80)*1.06;
-  surfCol = pow(max(surfCol, vec3(0.)), vec3(1./2.2));
-
-  // Atmospheric cold haze in shadows
-  float lum  = dot(surfCol, vec3(0.299, 0.587, 0.114));
-  surfCol    = mix(surfCol, vec3(0.08, 0.12, 0.28), (1.-lum)*0.10);
-
-  gl_FragColor = vec4(surfCol, 1.);
+  gl_FragColor = vec4(col, 1.0);
 }`;
 
-// ----- Shader compilation -----
-function mkSh(type, src){
-  const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+// ─── GL Helpers ─────────────────────────────────────────────────────────────
+function mkShader(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+    throw new Error('Shader compile: ' + gl.getShaderInfoLog(s));
   return s;
 }
-function mkProg(fsrc){
-  const p=gl.createProgram();
-  gl.attachShader(p, mkSh(gl.VERTEX_SHADER, VERT));
-  gl.attachShader(p, mkSh(gl.FRAGMENT_SHADER, fsrc));
+
+function mkProg(fsrc) {
+  const p = gl.createProgram();
+  gl.attachShader(p, mkShader(gl.VERTEX_SHADER,   VERT));
+  gl.attachShader(p, mkShader(gl.FRAGMENT_SHADER, fsrc));
   gl.linkProgram(p);
-  if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
-  const u={}, n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
-  for(let i=0;i<n;i++){const x=gl.getActiveUniform(p,i); u[x.name]=gl.getUniformLocation(p,x.name);}
-  return{p,u};
-}
-
-let simP, renP;
-try{ simP=mkProg(SIM); renP=mkProg(RENDER); }
-catch(e){ document.body.innerHTML=`<pre style="color:#adf;padding:20px;font-size:11px;white-space:pre-wrap">${e.message}</pre>`; throw e; }
-
-const qb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,qb);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-function bindQ(prog){
-  gl.bindBuffer(gl.ARRAY_BUFFER,qb);
-  const loc=gl.getAttribLocation(prog.p,'aPos');
-  gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
-}
-
-function mkData(){
-  const n=S*S*4;
-  if(!UINT8){
-    if(FTYPE===gl.FLOAT) return new Float32Array(n).fill(.5);
-    return new Uint16Array(n).fill(0x3800);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error('Program link: ' + gl.getProgramInfoLog(p));
+  const u = {};
+  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
+  for (let i = 0; i < n; i++) {
+    const info = gl.getActiveUniform(p, i);
+    u[info.name] = gl.getUniformLocation(p, info.name);
   }
-  const d=new Uint8Array(n);
-  for(let i=0;i<n;i+=4){d[i]=127;d[i+1]=128;d[i+2]=127;d[i+3]=128;}
+  return { p, u };
+}
+
+let simProg, renderProg;
+try {
+  simProg    = mkProg(SIM_FRAG);
+  renderProg = mkProg(RENDER_FRAG);
+} catch (e) {
+  console.error(e);
+  document.body.innerHTML = `<pre style="color:#f88;padding:20px;font-size:11px;white-space:pre-wrap">${e.message}</pre>`;
+  throw e;
+}
+
+// Fullscreen quad
+const qbuf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, qbuf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+function bindQuad(prog) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, qbuf);
+  const loc = gl.getAttribLocation(prog.p, 'aPos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+}
+
+// ─── FBOs ───────────────────────────────────────────────────────────────────
+function mkInitData() {
+  const n = S * S * 4;
+  if (!UINT8) {
+    // float or half-float: 0.5 encodes to resting height 0
+    if (FTYPE === gl.FLOAT)              return new Float32Array(n).fill(0.5);
+    if (FTYPE === extHalfF.HALF_FLOAT_OES) return new Uint16Array(n).fill(0x3800); // 0.5 in fp16
+  }
+  // UINT8 mode: enc16(0) → t=0.5 → t255=127.5 → hi=127/255, lo=0.5
+  // Byte values: hi=127 (≈127/255), lo=128 (round(0.5*255))
+  // Layout per texel: [curr_hi, curr_lo, prev_hi, prev_lo]
+  const d = new Uint8Array(n);
+  for (let i = 0; i < n; i += 4) { d[i]=127; d[i+1]=128; d[i+2]=127; d[i+3]=128; }
   return d;
 }
-function mkFBO(){
-  const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,S,S,0,gl.RGBA,FTYPE,mkData());
-  const f=ULIN?gl.LINEAR:gl.NEAREST;
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,f);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,f);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  const fbo=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
-  gl.bindFramebuffer(gl.FRAMEBUFFER,null); return{tex,fbo};
-}
-let fboA=mkFBO(), fboB=mkFBO();
 
-// ----- Input -----
-const ptr={x:.5,y:.5,active:false,prevX:.5,prevY:.5};
-let gone=false;
-function toUV(cx,cy){return{x:cx/CW, y:1.-cy/CH};}
-function dismiss(){if(gone)return; gone=true; ui.classList.add('fade'); setTimeout(()=>ui.style.display='none',3000);}
-function onDown(e){const t=e.touches?e.touches[0]:e, uv=toUV(t.clientX,t.clientY); ptr.prevX=uv.x;ptr.prevY=uv.y;ptr.x=uv.x;ptr.y=uv.y;ptr.active=true;dismiss();}
-function onMove(e){if(!ptr.active)return; const t=e.touches?e.touches[0]:e; ptr.prevX=ptr.x;ptr.prevY=ptr.y; const uv=toUV(t.clientX,t.clientY);ptr.x=uv.x;ptr.y=uv.y;}
-function onUp(){ptr.active=false;}
-canvas.addEventListener('mousedown',onDown);
-canvas.addEventListener('mousemove',onMove);
-window.addEventListener('mouseup',onUp);
-canvas.addEventListener('touchstart',e=>{e.preventDefault();onDown(e);},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();onMove(e);},{passive:false});
-canvas.addEventListener('touchend',e=>{e.preventDefault();onUp();},{passive:false});
-
-// Autonomous snowflake landings: frequent, small, gentle
-const drops=[]; let lastDrop=0;
-function spawnDrop(now){
-  const gap = ptr.active ? 9999 : (90 + Math.random()*200);
-  if(now-lastDrop < gap) return; lastDrop=now;
-  drops.push({
-    x: .04 + Math.random()*.92,
-    y: .04 + Math.random()*.92,
-    str: 0.030 + Math.random()*0.065,
-    born: now,
-    ttl:  10  + Math.random()*22
-  });
+function mkFBO() {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, S, S, 0, gl.RGBA, FTYPE, mkInitData());
+  const f = USE_LINEAR ? gl.LINEAR : gl.NEAREST;
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { tex, fbo };
 }
 
-function simulate(src,dst,mx,my,active,str){
-  gl.bindFramebuffer(gl.FRAMEBUFFER,dst.fbo); gl.viewport(0,0,S,S);
-  gl.useProgram(simP.p); bindQ(simP);
-  const u=simP.u;
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,src.tex);
-  gl.uniform1i(u.uS,0); gl.uniform2f(u.uTx,1./S,1./S);
-  gl.uniform2f(u.uM,mx,my); gl.uniform1f(u.uR,.042); gl.uniform1f(u.uStr,active?str:0.);
-  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+let fboA = mkFBO();
+let fboB = mkFBO();
+
+// ─── Input ──────────────────────────────────────────────────────────────────
+const ptr = { x:0.5, y:0.5, active:false, prevX:0.5, prevY:0.5 };
+let hintDismissed = false;
+
+// FIX: divide by CSS pixels (CW/CH), NOT canvas physical pixels (W/H)
+// Touch/mouse events always give clientX/Y in CSS coordinate space
+function toUV(cx, cy) {
+  return { x: cx / CW, y: 1.0 - cy / CH };
 }
 
-let time=0;
-function render(src){
-  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,W,H);
-  gl.useProgram(renP.p); bindQ(renP);
-  const u=renP.u;
-  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,src.tex);
-  gl.uniform1i(u.uW,0); gl.uniform2f(u.uTx,1./S,1./S);
-  gl.uniform1f(u.uTime,time); gl.uniform1f(u.uAspect,W/H);
-  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+function dismissHint() {
+  if (hintDismissed) return;
+  hintDismissed = true;
+  hint.classList.add('fade');
+  setTimeout(() => { hint.style.display = 'none'; }, 3000);
 }
 
-function frame(now){
-  requestAnimationFrame(frame); time=now*.001;
-  spawnDrop(now);
-  let mx=ptr.x, my=ptr.y, ma=ptr.active, ms=.18;
-  if(!ma&&drops.length>0){
-    const d=drops[0];
-    if(now-d.born < d.ttl){mx=d.x;my=d.y;ma=true;ms=d.str;}
-    else drops.shift();
+function onDown(e) {
+  const t = e.touches ? e.touches[0] : e;
+  const uv = toUV(t.clientX, t.clientY);
+  ptr.prevX = uv.x; ptr.prevY = uv.y;
+  ptr.x = uv.x; ptr.y = uv.y; ptr.active = true;
+  dismissHint();
+}
+
+function onMove(e) {
+  if (!ptr.active) return;
+  const t = e.touches ? e.touches[0] : e;
+  ptr.prevX = ptr.x; ptr.prevY = ptr.y;
+  const uv = toUV(t.clientX, t.clientY);
+  ptr.x = uv.x; ptr.y = uv.y;
+}
+
+function onUp() { ptr.active = false; }
+
+// Mouse
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup',   onUp);
+
+// FIX: passive:false on ALL touch events so we can preventDefault
+// This stops iPad Safari hijacking the gesture as scroll/zoom
+canvas.addEventListener('touchstart',  e => { e.preventDefault(); onDown(e); }, { passive:false });
+canvas.addEventListener('touchmove',   e => { e.preventDefault(); onMove(e); }, { passive:false });
+canvas.addEventListener('touchend',    e => { e.preventDefault(); onUp();    }, { passive:false });
+canvas.addEventListener('touchcancel', e => { e.preventDefault(); onUp();    }, { passive:false });
+
+// ─── Ambient drops removed — interaction only ────────────────────────────
+const drops = [];
+let lastDrop = 0;
+
+function maybeSpawnDrop(now) {
+  // No auto drops — water only reacts to touch/mouse
+}
+
+// ─── Simulation step ────────────────────────────────────────────────────────
+function simulate(src, dst, mx, my, active, str) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fbo);
+  gl.viewport(0, 0, S, S);
+  gl.useProgram(simProg.p);
+  bindQuad(simProg);
+  const u = simProg.u;
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, src.tex);
+  gl.uniform1i(u.uState,    0);
+  gl.uniform2f(u.uTexel,    1.0/S, 1.0/S);
+  gl.uniform2f(u.uMouse,    mx, my);
+  gl.uniform1f(u.uRadius,   0.046);
+  gl.uniform1f(u.uStrength, active ? str : 0.0);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ─── Render ─────────────────────────────────────────────────────────────────
+let time = 0;
+
+function render(src) {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+  gl.useProgram(renderProg.p);
+  bindQuad(renderProg);
+  const u = renderProg.u;
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, src.tex);
+  gl.uniform1i(u.uWater,  0);
+  gl.uniform2f(u.uTexel,  1.0/S, 1.0/S);
+  gl.uniform1f(u.uTime,   time);
+  gl.uniform1f(u.uAspect, W / H);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+
+// ─── Main loop ──────────────────────────────────────────────────────────────
+function frame(now) {
+  requestAnimationFrame(frame);
+  time = now * 0.001;
+
+  maybeSpawnDrop(now);
+
+  let mx = ptr.x, my = ptr.y, mactive = ptr.active, mstr = 0.18;
+
+  // No ambient drops
+
+  // Drag speed → wave strength
+  if (ptr.active) {
+    const spd = Math.hypot(ptr.x - ptr.prevX, ptr.y - ptr.prevY);
+    mstr = Math.min(0.12 + spd * 20.0, 0.60);
   }
-  if(ptr.active){
-    const spd=Math.hypot(ptr.x-ptr.prevX,ptr.y-ptr.prevY);
-    ms=Math.min(.08+spd*14., .48);
+
+  // 8 substeps per frame for sharper waves
+  for (let i = 0; i < 8; i++) {
+    simulate(fboA, fboB, mx, my, mactive && i < 3, mstr);
+    const tmp = fboA; fboA = fboB; fboB = tmp;
   }
-  for(let i=0;i<4;i++){
-    simulate(fboA,fboB,mx,my,ma&&i<2,ms);
-    const tmp=fboA; fboA=fboB; fboB=tmp;
-  }
+
   render(fboA);
 }
+
 requestAnimationFrame(frame);
-</script>
+  </script>
 </body>
+
 </html>
