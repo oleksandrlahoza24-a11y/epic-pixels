@@ -4,681 +4,1485 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Ultra-Realistic Water</title>
+  <title>WATCHER</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
   <style>
-    * {
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400;500&display=swap');
+
+    :root {
+      --bg: #080808;
+      --surface: #111111;
+      --surface2: #191919;
+      --surface3: #242424;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.12);
+      --text: #f0f0f0;
+      --text2: #888;
+      --text3: #555;
+      --accent: #e8e0cc;
+      --accent2: #b5a98a;
+      --red: #c0392b;
+      --amber: #d4a843;
+      --green: #3a7d44;
+      --blue: #3a6494;
+      --r: 6px;
+      --r2: 10px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html,
     body {
       width: 100%;
       height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
       overflow: hidden;
-      background: #04111a;
-      touch-action: none;
+      touch-action: manipulation;
       -webkit-user-select: none;
       user-select: none;
     }
 
-    canvas {
-      display: block;
-      position: fixed;
-      top: 0;
-      left: 0;
-      touch-action: none;
-      cursor: crosshair;
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
     }
 
-    #hint {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(160, 220, 255, 0.55);
-      font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    /* ── TOP BAR ── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    #logo {
+      font-family: var(--mono);
       font-size: 13px;
-      letter-spacing: 4px;
+      letter-spacing: 0.22em;
+      color: var(--accent);
+      font-weight: 400;
       text-transform: uppercase;
-      pointer-events: none;
-      transition: opacity 2.5s ease;
-      text-shadow: 0 0 20px rgba(80, 180, 255, 0.4);
-      white-space: nowrap;
     }
 
-    #hint.fade {
+    #topbar-right {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--r);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 17px;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .icon-btn:active {
+      background: var(--surface3);
+      color: var(--text);
+    }
+
+    .icon-btn.active {
+      border-color: var(--accent2);
+      color: var(--accent);
+    }
+
+    /* ── MAIN LAYOUT ── */
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── VIDEO ZONE ── */
+    #video-zone {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #player-wrap {
+      flex: 1;
+      background: #000;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #player-wrap video,
+    #player-wrap audio {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #canvas-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #drop-zone {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    #drop-zone i {
+      font-size: 40px;
+      color: var(--text3);
+    }
+
+    #drop-zone p {
+      color: var(--text3);
+      font-size: 13px;
+      letter-spacing: 0.05em;
+    }
+
+    #drop-zone.hidden {
+      display: none;
+    }
+
+    #ambient-glow {
+      position: absolute;
+      inset: -20px;
+      pointer-events: none;
       opacity: 0;
+      transition: opacity 0.5s;
+      filter: blur(40px) saturate(2);
+      background: radial-gradient(ellipse at center, var(--glow-color, #444) 0%, transparent 70%);
+    }
+
+    #ambient-glow.active {
+      opacity: 0.25;
+    }
+
+    /* ── PLAYER CONTROLS ── */
+    #controls {
+      padding: 10px 16px 12px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #progress-bar-wrap {
+      width: 100%;
+      height: 3px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    #progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    #progress-bar-wrap:active #progress-bar-fill {
+      background: var(--accent2);
+    }
+
+    #ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 20px;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--r);
+      transition: color 0.15s;
+    }
+
+    .ctrl-btn:active {
+      color: var(--accent);
+    }
+
+    .ctrl-btn.active {
+      color: var(--accent);
+    }
+
+    #time-display {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      margin-left: 4px;
+    }
+
+    #vol-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    #vol-wrap i {
+      font-size: 16px;
+      color: var(--text3);
+    }
+
+    #vol-slider {
+      width: 70px;
+    }
+
+    /* ── SIDE PANEL ── */
+    #side-panel {
+      width: 280px;
+      min-width: 280px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.25s, min-width 0.25s;
+    }
+
+    #side-panel.collapsed {
+      width: 0;
+      min-width: 0;
+    }
+
+    #panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .ptab {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 11px 4px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .ptab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent2);
+    }
+
+    #panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 20px;
+    }
+
+    #panel-content::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    #panel-content::-webkit-scrollbar-thumb {
+      background: var(--surface3);
+      border-radius: 2px;
+    }
+
+    .panel-section {
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 10px;
+    }
+
+    /* ── SLIDERS ── */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--surface3);
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    input[type=range]:active::-webkit-slider-thumb {
+      transform: scale(1.3);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .slider-label {
+      font-size: 11px;
+      color: var(--text2);
+      width: 68px;
+      flex-shrink: 0;
+    }
+
+    .slider-row input[type=range] {
+      flex: 1;
+    }
+
+    .slider-val {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      width: 32px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* ── EQ ── */
+    #eq-bars {
+      display: flex;
+      gap: 5px;
+      align-items: flex-end;
+      height: 60px;
+      padding: 4px 0;
+    }
+
+    .eq-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .eq-col input[type=range] {
+      writing-mode: vertical-lr;
+      direction: rtl;
+      -webkit-appearance: slider-vertical;
+      appearance: slider-vertical;
+      width: 3px;
+      height: 48px;
+    }
+
+    .eq-col input[type=range]::-webkit-slider-thumb {
+      width: 12px;
+      height: 12px;
+    }
+
+    .eq-col span {
+      font-family: var(--mono);
+      font-size: 8px;
+      color: var(--text3);
+    }
+
+    /* ── PRESETS ── */
+    .preset-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .preset-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 8px 6px;
+      border-radius: var(--r);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .preset-btn i {
+      font-size: 16px;
+    }
+
+    .preset-btn:active {
+      background: var(--surface3);
+      color: var(--accent);
+      border-color: var(--accent2);
+    }
+
+    .preset-btn.active {
+      background: var(--surface3);
+      color: var(--accent);
+      border-color: var(--accent2);
+    }
+
+    /* ── VISUAL FX ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .toggle-label {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .toggle-switch {
+      width: 34px;
+      height: 18px;
+      background: var(--surface3);
+      border-radius: 9px;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--text3);
+      transition: all 0.2s;
+    }
+
+    .toggle-switch.on {
+      background: var(--accent2);
+      border-color: var(--accent);
+    }
+
+    .toggle-switch.on::after {
+      left: 18px;
+      background: var(--bg);
+    }
+
+    /* ── SETTINGS PANEL ── */
+    .settings-section {
+      margin-bottom: 18px;
+    }
+
+    .settings-label {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: var(--r);
+      width: 100%;
+      cursor: pointer;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    /* ── VISUALIZER CANVAS ── */
+    #visualizer-canvas {
+      width: 100%;
+      height: 40px;
+      display: block;
+      margin: 6px 0 2px;
+      border-radius: var(--r);
+      background: transparent;
+    }
+
+    /* ── INFO STRIP ── */
+    #info-strip {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 7px 16px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .info-chip {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text3);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .info-chip i {
+      font-size: 11px;
+    }
+
+    #preset-label {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--accent2);
+      letter-spacing: 0.1em;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 8px 16px;
+      border-radius: 20px;
+      opacity: 0;
+      transition: all 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 100;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ── FULLSCREEN ── */
+    #player-wrap.fullscreen-mode {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: #000;
+    }
+
+    /* ── WAVEFORM ── */
+    #waveform-bar {
+      display: flex;
+      gap: 1px;
+      align-items: center;
+      justify-content: center;
+      height: 28px;
+      padding: 0 4px;
+    }
+
+    .wf-line {
+      width: 2px;
+      background: var(--accent2);
+      border-radius: 1px;
+      opacity: 0.6;
+      transition: height 0.1s;
+    }
+
+    /* ── FILE INPUT ── */
+    #file-input {
+      display: none;
+    }
+
+    /* ── SCROLLBAR GLOBAL ── */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--surface3) transparent;
     }
   </style>
 </head>
 
 <body>
-  <canvas id="c"></canvas>
-  <div id="hint">∿ touch the water ∿</div>
+
+  <div id="app">
+
+    <!-- TOP BAR -->
+    <div id="topbar">
+      <div id="logo">Watcher</div>
+      <div id="topbar-right">
+        <button class="icon-btn active" id="btn-panel" title="Sound Panel" aria-label="Toggle sound panel">
+        <i class="ti ti-adjustments-horizontal"></i>
+      </button>
+        <button class="icon-btn" id="btn-fullscreen" title="Fullscreen" aria-label="Fullscreen">
+        <i class="ti ti-maximize"></i>
+      </button>
+        <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
+        <i class="ti ti-settings"></i>
+      </button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main">
+
+      <!-- VIDEO ZONE -->
+      <div id="video-zone">
+        <div id="player-wrap" id="player-wrap">
+          <div id="ambient-glow"></div>
+          <video id="video-el" style="display:none"></video>
+          <audio id="audio-el" style="display:none"></audio>
+          <canvas id="canvas-overlay"></canvas>
+          <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <i class="ti ti-file-music"></i>
+            <p>Tap to load video or audio</p>
+            <p style="font-size:11px; margin-top:4px; opacity:0.5">MP4 · MOV · MP3 · WAV · AAC · FLAC</p>
+          </div>
+          <input type="file" id="file-input" accept="video/*,audio/*">
+        </div>
+
+        <!-- VISUALIZER -->
+        <canvas id="visualizer-canvas"></canvas>
+
+        <!-- INFO STRIP -->
+        <div id="info-strip">
+          <div class="info-chip"><i class="ti ti-file"></i><span id="info-file">—</span></div>
+          <div class="info-chip"><i class="ti ti-clock"></i><span id="info-dur">—</span></div>
+          <div id="preset-label">NO PRESET</div>
+        </div>
+
+        <!-- CONTROLS -->
+        <div id="controls">
+          <div id="progress-bar-wrap" id="progress-bar-wrap">
+            <div id="progress-bar-fill"></div>
+          </div>
+          <div id="ctrl-row">
+            <button class="ctrl-btn" id="btn-skip-back" aria-label="Skip back 10s"><i class="ti ti-rewind-10"></i></button>
+            <button class="ctrl-btn" id="btn-play" aria-label="Play/Pause"><i class="ti ti-player-play"></i></button>
+            <button class="ctrl-btn" id="btn-skip-fwd" aria-label="Skip forward 10s"><i class="ti ti-fast-forward-10"></i></button>
+            <button class="ctrl-btn" id="btn-loop" aria-label="Loop"><i class="ti ti-repeat"></i></button>
+            <span id="time-display">0:00 / 0:00</span>
+            <div id="vol-wrap">
+              <i class="ti ti-volume"></i>
+              <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDE PANEL -->
+      <div id="side-panel">
+        <div id="panel-tabs">
+          <button class="ptab active" data-tab="sound">Sound</button>
+          <button class="ptab" data-tab="visual">Visual</button>
+          <button class="ptab" data-tab="presets">Presets</button>
+          <button class="ptab" data-tab="settings">Config</button>
+        </div>
+        <div id="panel-content">
+
+          <!-- SOUND TAB -->
+          <div id="tab-sound" class="tab-pane">
+            <div class="panel-section">
+              <div class="section-label">Equalizer</div>
+              <div id="eq-bars">
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="60" orient="vertical"><span>60</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="170" orient="vertical"><span>170</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="310" orient="vertical"><span>310</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="600" orient="vertical"><span>600</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="1k" orient="vertical"><span>1k</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="3k" orient="vertical"><span>3k</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="6k" orient="vertical"><span>6k</span>
+                </div>
+                <div class="eq-col">
+                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="12k" orient="vertical"><span>12k</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Dynamics</div>
+              <div class="slider-row">
+                <span class="slider-label">Bass Boost</span>
+                <input type="range" id="bass-boost" min="0" max="20" value="0" step="0.5">
+                <span class="slider-val" id="bass-boost-val">0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Treble</span>
+                <input type="range" id="treble" min="-10" max="10" value="0" step="0.5">
+                <span class="slider-val" id="treble-val">0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Compression</span>
+                <input type="range" id="compression" min="1" max="20" value="1" step="0.5">
+                <span class="slider-val" id="compression-val">1</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Warmth</span>
+                <input type="range" id="warmth" min="0" max="10" value="0" step="0.5">
+                <span class="slider-val" id="warmth-val">0</span>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Spatial</div>
+              <div class="slider-row">
+                <span class="slider-label">Stereo Width</span>
+                <input type="range" id="stereo-width" min="0" max="2" value="1" step="0.05">
+                <span class="slider-val" id="stereo-width-val">1.0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Reverb</span>
+                <input type="range" id="reverb" min="0" max="1" value="0" step="0.01">
+                <span class="slider-val" id="reverb-val">0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Delay Mix</span>
+                <input type="range" id="delay-mix" min="0" max="0.8" value="0" step="0.01">
+                <span class="slider-val" id="delay-mix-val">0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Delay Time</span>
+                <input type="range" id="delay-time" min="0.05" max="1" value="0.25" step="0.01">
+                <span class="slider-val" id="delay-time-val">0.25</span>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Playback</div>
+              <div class="slider-row">
+                <span class="slider-label">Speed</span>
+                <input type="range" id="playback-speed" min="0.25" max="2" value="1" step="0.05">
+                <span class="slider-val" id="playback-speed-val">1.0×</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Pitch Shift</span>
+                <input type="range" id="pitch-shift" min="-6" max="6" value="0" step="0.5">
+                <span class="slider-val" id="pitch-shift-val">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- VISUAL TAB -->
+          <div id="tab-visual" class="tab-pane" style="display:none">
+            <div class="panel-section">
+              <div class="section-label">Ambient</div>
+              <div class="toggle-row">
+                <span class="toggle-label">Ambient Glow</span>
+                <div class="toggle-switch" id="tog-ambient"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Vignette</span>
+                <div class="toggle-switch" id="tog-vignette"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Scan Lines</span>
+                <div class="toggle-switch" id="tog-scanlines"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Film Grain</span>
+                <div class="toggle-switch" id="tog-grain"></div>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Color</div>
+              <div class="slider-row">
+                <span class="slider-label">Brightness</span>
+                <input type="range" id="v-brightness" min="0.5" max="1.5" value="1" step="0.01">
+                <span class="slider-val" id="v-brightness-val">1.0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Contrast</span>
+                <input type="range" id="v-contrast" min="0.5" max="2" value="1" step="0.01">
+                <span class="slider-val" id="v-contrast-val">1.0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Saturation</span>
+                <input type="range" id="v-saturation" min="0" max="2" value="1" step="0.01">
+                <span class="slider-val" id="v-saturation-val">1.0</span>
+              </div>
+              <div class="slider-row">
+                <span class="slider-label">Warmth Tint</span>
+                <input type="range" id="v-warmth" min="-0.3" max="0.3" value="0" step="0.01">
+                <span class="slider-val" id="v-warmth-val">0</span>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Visualizer Style</div>
+              <div class="preset-grid">
+                <button class="preset-btn active" id="vis-bars" onclick="setVisStyle('bars')"><i class="ti ti-chart-bar"></i>Bars</button>
+                <button class="preset-btn" id="vis-wave" onclick="setVisStyle('wave')"><i class="ti ti-wave-sine"></i>Wave</button>
+                <button class="preset-btn" id="vis-circle" onclick="setVisStyle('circle')"><i class="ti ti-circle"></i>Radial</button>
+                <button class="preset-btn" id="vis-off" onclick="setVisStyle('off')"><i class="ti ti-eye-off"></i>Off</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRESETS TAB -->
+          <div id="tab-presets" class="tab-pane" style="display:none">
+            <div class="panel-section">
+              <div class="section-label">Sound Presets</div>
+              <div class="preset-grid">
+                <button class="preset-btn" onclick="applyPreset('cinema')"><i class="ti ti-movie"></i>Cinema</button>
+                <button class="preset-btn" onclick="applyPreset('music')"><i class="ti ti-music"></i>Music</button>
+                <button class="preset-btn" onclick="applyPreset('podcast')"><i class="ti ti-microphone"></i>Podcast</button>
+                <button class="preset-btn" onclick="applyPreset('night')"><i class="ti ti-moon"></i>Night</button>
+                <button class="preset-btn" onclick="applyPreset('bass')"><i class="ti ti-bolt"></i>Bass Heavy</button>
+                <button class="preset-btn" onclick="applyPreset('vocal')"><i class="ti ti-microphone-2"></i>Vocal Boost</button>
+                <button class="preset-btn" onclick="applyPreset('spatial')"><i class="ti ti-3d-cube-sphere"></i>Spatial</button>
+                <button class="preset-btn" onclick="applyPreset('lofi')"><i class="ti ti-vinyl"></i>Lo-Fi</button>
+                <button class="preset-btn" onclick="applyPreset('concert')"><i class="ti ti-building-stadium"></i>Concert</button>
+                <button class="preset-btn" onclick="applyPreset('flat')"><i class="ti ti-minus"></i>Flat</button>
+              </div>
+            </div>
+
+            <div class="panel-section">
+              <div class="section-label">Visual Presets</div>
+              <div class="preset-grid">
+                <button class="preset-btn" onclick="applyVisPreset('dark')"><i class="ti ti-contrast"></i>Dark Room</button>
+                <button class="preset-btn" onclick="applyVisPreset('warm')"><i class="ti ti-flame"></i>Warm</button>
+                <button class="preset-btn" onclick="applyVisPreset('vivid')"><i class="ti ti-palette"></i>Vivid</button>
+                <button class="preset-btn" onclick="applyVisPreset('cool')"><i class="ti ti-snowflake"></i>Cool</button>
+                <button class="preset-btn" onclick="applyVisPreset('noir')"><i class="ti ti-brand-twitch"></i>Noir</button>
+                <button class="preset-btn" onclick="applyVisPreset('clear')"><i class="ti ti-sun"></i>Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SETTINGS TAB -->
+          <div id="tab-settings" class="tab-pane" style="display:none">
+            <div class="panel-section">
+              <div class="section-label">Display</div>
+              <div class="toggle-row">
+                <span class="toggle-label">Keep Screen On</span>
+                <div class="toggle-switch on" id="tog-screen"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Show Info Strip</span>
+                <div class="toggle-switch on" id="tog-infostrip"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Auto-hide Controls</span>
+                <div class="toggle-switch" id="tog-autohide"></div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <div class="section-label">Audio Engine</div>
+              <div class="toggle-row">
+                <span class="toggle-label">Loudness Norm.</span>
+                <div class="toggle-switch" id="tog-loudness"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Auto EQ</span>
+                <div class="toggle-switch" id="tog-autoeq"></div>
+              </div>
+              <div class="toggle-row">
+                <span class="toggle-label">Noise Gate</span>
+                <div class="toggle-switch" id="tog-noisegate"></div>
+              </div>
+            </div>
+            <div class="panel-section">
+              <div class="section-label">Output</div>
+              <select id="output-select">
+              <option>Default Output</option>
+              <option>Headphones</option>
+              <option>Speaker</option>
+              <option>Bluetooth</option>
+            </select>
+            </div>
+            <div class="panel-section" style="margin-top:24px">
+              <button class="preset-btn" style="width:100%; flex-direction:row; gap:8px; padding:10px 14px;" onclick="resetAll()">
+              <i class="ti ti-refresh"></i> Reset All Settings
+            </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
   <script>
-    'use strict';
+    const $ = id => document.getElementById(id);
 
-const canvas = document.getElementById('c');
-const hint   = document.getElementById('hint');
+// ── STATE ──
+let audioCtx, sourceNode, analyserNode, gainNode, dynamicsCompressor, delayNode, delayGainNode, reverbNode, reverbGainNode, eqNodes = [], bassBoostNode, trebleNode, stereoMerger, stereoSplitter;
+let mediaEl = null;
+let isPlaying = false;
+let visStyle = 'bars';
+let animFrameId;
+let activePreset = '';
+let grain = false, scanlines = false, vignette = false, ambientGlow = false;
+let autohide = false, autohideTimer;
+let noiseGateEnabled = false, autoeqEnabled = false, loudnessEnabled = false;
+let currentFilter = '';
 
-// ─── Retina / iPad DPR support ─────────────────────────────────────────────
-const DPR = Math.min(window.devicePixelRatio || 1, 3);
-let W = 0, H = 0;   // physical canvas pixels
-let CW = 0, CH = 0; // CSS layout pixels (event coordinates are in these)
+const EQ_FREQS = [60, 170, 310, 600, 1000, 3000, 6000, 12000];
 
-function resize() {
-  CW = window.innerWidth;
-  CH = window.innerHeight;
-  W  = Math.round(CW * DPR);
-  H  = Math.round(CH * DPR);
-  canvas.width        = W;
-  canvas.height       = H;
-  canvas.style.width  = CW + 'px';
-  canvas.style.height = CH + 'px';
-}
-resize();
-window.addEventListener('resize', resize);
-
-// ─── WebGL init ─────────────────────────────────────────────────────────────
-const glOpts = { antialias:false, alpha:false, preserveDrawingBuffer:false, powerPreference:'high-performance' };
-const gl = canvas.getContext('webgl', glOpts)
-        || canvas.getContext('experimental-webgl', glOpts);
-
-if (!gl) {
-  document.body.style.cssText = 'background:#030c12;display:flex;align-items:center;justify-content:center';
-  document.body.innerHTML = '<p style="color:#7ad;font-family:serif;font-size:18px;text-align:center;line-height:2">WebGL not available<br><small style="opacity:.5">Try Chrome or Safari</small></p>';
-  throw 0;
-}
-
-// Extensions
-const extFloat    = gl.getExtension('OES_texture_float');
-const extHalfF    = gl.getExtension('OES_texture_half_float');
-const extFloatLin = gl.getExtension('OES_texture_float_linear');
-const extHalfLin  = gl.getExtension('OES_texture_half_float_linear');
-gl.getExtension('WEBGL_color_buffer_float');
-gl.getExtension('EXT_color_buffer_half_float');
-
-function canRenderTo(type) {
-  const t = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, t);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 4, 4, 0, gl.RGBA, type, null);
-  const f = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, f);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
-  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
-  gl.deleteFramebuffer(f); gl.deleteTexture(t);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  return ok;
-}
-
-// Pick best available float format for FBO rendering
-let FTYPE, USE_LINEAR, UINT8;
-if (extFloat && canRenderTo(gl.FLOAT)) {
-  FTYPE = gl.FLOAT; USE_LINEAR = !!extFloatLin; UINT8 = false;
-} else if (extHalfF && canRenderTo(extHalfF.HALF_FLOAT_OES)) {
-  FTYPE = extHalfF.HALF_FLOAT_OES; USE_LINEAR = !!extHalfLin; UINT8 = false;
-} else {
-  // iPad / older devices fall here — uint8 with 16-bit encoding fixes quantisation pixels
-  FTYPE = gl.UNSIGNED_BYTE; USE_LINEAR = true; UINT8 = true;
-}
-
-const S = 5000; // simulation grid (square)
-
-// ─── Shader: vertex (shared) ────────────────────────────────────────────────
-const VERT = `
-attribute vec2 aPos;
-varying   vec2 vUV;
-void main() {
-  vUV = aPos * 0.5 + 0.5;
-  gl_Position = vec4(aPos, 0.0, 1.0);
-}`;
-
-// ─── Shader: simulation ─────────────────────────────────────────────────────
-// FIX: On uint8 devices (iPad), we use 16-bit fixed-point:
-//   curr height → R (hi byte) + G (lo byte)
-//   prev height → B (hi byte) + A (lo byte)
-// This gives ~65000 precision levels vs 256, eliminating pixel-block artefacts.
-const SIM_FRAG = (UINT8 ? '#define UINT8_MODE\n' : '') + `
-precision highp float;
-varying vec2  vUV;
-uniform sampler2D uState;
-uniform vec2  uTexel;
-uniform vec2  uMouse;
-uniform float uRadius;
-uniform float uStrength;
-
-#ifdef UINT8_MODE
-  // Encode float [-1,1] → two bytes stored in vec2([0,1])
-  // hi = integer part of t*255 / 255
-  // lo = fractional part of t*255  (full [0,1) range for sub-byte precision)
-  vec2 enc16(float v) {
-    float t   = clamp(v * 0.5 + 0.5, 0.0, 0.99999);
-    float t255 = t * 255.0;
-    return vec2(floor(t255) / 255.0, fract(t255));
+// ── AUDIO SETUP ──
+function initAudio(el) {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  // Decode: (hi + lo/255) * 2 - 1
-  float dec16(vec2 v) { return (v.x + v.y / 255.0) * 2.0 - 1.0; }
-  float CURR(vec2 uv) { return dec16(texture2D(uState, uv).rg); }
-  float PREV(vec2 uv) { return dec16(texture2D(uState, uv).ba); }
-#else
-  float CURR(vec2 uv) { return texture2D(uState, uv).r * 2.0 - 1.0; }
-  float PREV(vec2 uv) { return texture2D(uState, uv).g * 2.0 - 1.0; }
-#endif
+  if (sourceNode) { try { sourceNode.disconnect(); } catch(e) {} }
 
-void main() {
-  float curr = CURR(vUV);
-  float prev = PREV(vUV);
+  sourceNode = audioCtx.createMediaElementSource(el);
 
-  float n = CURR(vUV + vec2( 0.0,      uTexel.y));
-  float s = CURR(vUV - vec2( 0.0,      uTexel.y));
-  float e = CURR(vUV + vec2( uTexel.x, 0.0     ));
-  float w = CURR(vUV - vec2( uTexel.x, 0.0     ));
+  // EQ bands
+  eqNodes = EQ_FREQS.map((freq, i) => {
+    const f = audioCtx.createBiquadFilter();
+    f.type = (i === 0) ? 'lowshelf' : (i === EQ_FREQS.length - 1) ? 'highshelf' : 'peaking';
+    f.frequency.value = freq;
+    f.gain.value = 0;
+    return f;
+  });
 
-  // ── Diagonal neighbours for more isotropic wave propagation ──────────────
-  float ne = CURR(vUV + vec2( uTexel.x,  uTexel.y));
-  float nw = CURR(vUV + vec2(-uTexel.x,  uTexel.y));
-  float se = CURR(vUV + vec2( uTexel.x, -uTexel.y));
-  float sw = CURR(vUV + vec2(-uTexel.x, -uTexel.y));
+  // Bass boost
+  bassBoostNode = audioCtx.createBiquadFilter();
+  bassBoostNode.type = 'lowshelf';
+  bassBoostNode.frequency.value = 200;
+  bassBoostNode.gain.value = 0;
 
-  // Isotropic wave equation — combines cardinal and diagonal taps
-  // Cardinal weight 0.5, diagonal weight 0.25 → Courant stable, rounder wavefronts
-  float laplacian = (n + s + e + w) * 0.5 + (ne + nw + se + sw) * 0.25 - curr * 3.0;
-  float next = curr * 2.0 - prev + laplacian * 0.28;
+  // Treble
+  trebleNode = audioCtx.createBiquadFilter();
+  trebleNode.type = 'highshelf';
+  trebleNode.frequency.value = 4000;
+  trebleNode.gain.value = 0;
 
-  // Nonlinear damping — calm water fades faster, active waves persist longer
-  float energy = abs(next);
-  float damp = mix(0.9985, 0.9998, smoothstep(0.0, 0.3, energy));
-  next *= damp;
+  // Compressor
+  dynamicsCompressor = audioCtx.createDynamicsCompressor();
+  dynamicsCompressor.threshold.value = -50;
+  dynamicsCompressor.knee.value = 40;
+  dynamicsCompressor.ratio.value = 1;
+  dynamicsCompressor.attack.value = 0.003;
+  dynamicsCompressor.release.value = 0.25;
 
-  // Dispersion — slightly slow down very short wavelengths for realism
-  float shortWave = abs(laplacian) * 0.004;
-  next -= shortWave * sign(next);
+  // Delay
+  delayNode = audioCtx.createDelay(1.0);
+  delayNode.delayTime.value = 0.25;
+  delayGainNode = audioCtx.createGain();
+  delayGainNode.gain.value = 0;
 
-  // Sponge-layer: absorb at borders to kill reflections
-  float bx = min(vUV.x, 1.0 - vUV.x) * 18.0;
-  float by = min(vUV.y, 1.0 - vUV.y) * 18.0;
-  next *= mix(0.72, 1.0, clamp(min(bx, by), 0.0, 1.0));
+  // Reverb
+  reverbNode = audioCtx.createConvolver();
+  reverbGainNode = audioCtx.createGain();
+  reverbGainNode.gain.value = 0;
+  createReverb(0.5);
 
-  // Pointer / drop disturbance
-  float d = length(vUV - uMouse);
-  next -= smoothstep(uRadius, 0.0, d) * uStrength;
-  next  = clamp(next, -1.0, 1.0);
+  // Analyser
+  analyserNode = audioCtx.createAnalyser();
+  analyserNode.fftSize = 256;
 
-  #ifdef UINT8_MODE
-    gl_FragColor = vec4(enc16(next), enc16(curr));
-  #else
-    gl_FragColor = vec4(next * 0.5 + 0.5, curr * 0.5 + 0.5, 0.0, 1.0);
-  #endif
-}`;
+  // Gain
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = $('vol-slider').value;
 
-// ─── Shader: render ─────────────────────────────────────────────────────────
-const RENDER_FRAG = (UINT8 ? '#define UINT8_MODE\n' : '') + `
-precision highp float;
-varying vec2  vUV;
-uniform sampler2D uWater;
-uniform vec2  uTexel;
-uniform float uTime;
-uniform float uAspect;
+  // Chain: source -> eq bands -> bassBoost -> treble -> compressor -> delay -> analyser -> gain -> dest
+  let node = sourceNode;
+  eqNodes.forEach(f => { node.connect(f); node = f; });
+  node.connect(bassBoostNode);
+  bassBoostNode.connect(trebleNode);
+  trebleNode.connect(dynamicsCompressor);
 
-// ── Noise ─────────────────────────────────────────────────────────────────
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
-float vnoise(vec2 p) {
-  vec2 i = floor(p), f = p - i;
-  f = f*f*(3.0 - 2.0*f);
-  return mix(mix(hash(i),         hash(i+vec2(1,0)), f.x),
-             mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y);
-}
-float fbm(vec2 p) {
-  float v=0.0, a=0.5;
-  for(int i=0;i<5;i++){ v+=vnoise(p)*a; p*=2.1; a*=0.5; }
-  return v;
+  // delay parallel
+  dynamicsCompressor.connect(delayNode);
+  delayNode.connect(delayGainNode);
+  delayGainNode.connect(analyserNode);
+
+  // reverb parallel
+  dynamicsCompressor.connect(reverbNode);
+  reverbNode.connect(reverbGainNode);
+  reverbGainNode.connect(analyserNode);
+
+  dynamicsCompressor.connect(analyserNode);
+  analyserNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
 }
 
-// ── Sky dome ──────────────────────────────────────────────────────────────
-vec3 getSky(vec2 dir) {
-  float t   = clamp(dir.y * 1.6, 0.0, 1.0);
-  vec3 sky  = mix(vec3(0.48, 0.72, 0.96), vec3(0.05, 0.22, 0.68), t*t);
-  // Sun disc
-  vec2 sunD = normalize(vec2(0.35, 0.72));
-  float sd  = dot(normalize(dir), sunD);
-  sky += vec3(1.00, 0.97, 0.80) * pow(max(sd, 0.0), 200.0) * 4.0;
-  sky += vec3(1.00, 0.78, 0.42) * pow(max(sd, 0.0),   5.0) * 0.45;
-  // Soft clouds
-  float cl = fbm(dir*5.0+3.7) * fbm(dir*3.0+1.2);
-  sky = mix(sky, vec3(0.92, 0.95, 1.00), smoothstep(0.35,0.65,cl)*0.5*(1.0-t));
-  return sky;
-}
-
-// ── Seabed ────────────────────────────────────────────────────────────────
-vec3 getSeabed(vec2 uv) {
-  float dr = uTime * 0.018;
-
-  // ── Base sand ripples — two overlapping sine patterns ────────────────────
-  float ripple1 = sin(uv.x*38.0 + fbm(uv*5.0+dr)*6.0 + uv.y*12.0)*0.5+0.5;
-  float ripple2 = sin(uv.y*30.0 + fbm(uv*4.2+1.7+dr)*5.0 + uv.x*8.0)*0.5+0.5;
-  float ripple3 = sin((uv.x+uv.y)*22.0 + fbm(uv*3.0+dr*0.7)*4.0)*0.5+0.5;
-  float det = fbm(uv*18.0 + dr*0.4);
-  float sandMix = ripple1*0.4 + ripple2*0.35 + ripple3*0.25;
-  vec3 sandLight = vec3(0.82, 0.71, 0.46);
-  vec3 sandDark  = vec3(0.62, 0.50, 0.30);
-  vec3 base = mix(sandDark, sandLight, sandMix * pow(det, 0.4));
-
-  // ── Wet sand darkening in depressions ────────────────────────────────────
-  float wet = smoothstep(0.55, 0.35, sandMix) * 0.4;
-  base = mix(base, base * vec3(0.60, 0.55, 0.42), wet);
-
-  // ── Large rocks with mossy tops ──────────────────────────────────────────
-  float rockMask = smoothstep(0.52, 0.74, fbm(uv*3.2+2.3));
-  float rockDetail = fbm(uv*11.0+4.1)*0.5+0.5;
-  vec3 rockCol = vec3(0.38,0.34,0.29) * (0.6 + 0.4*rockDetail);
-  // Moss on top of rocks
-  float moss = smoothstep(0.58, 0.78, fbm(uv*9.0+7.2)) * rockMask;
-  rockCol = mix(rockCol, vec3(0.18,0.32,0.14), moss*0.7);
-  base = mix(base, rockCol, rockMask*0.85);
-
-  // ── Scattered small pebbles ───────────────────────────────────────────────
-  vec2 pCell = floor(uv*100.0);
-  float pRand = hash(pCell);
-  float pDist = length(fract(uv*100.0) - vec2(hash(pCell+0.1), hash(pCell+0.2)));
-  float pebble = smoothstep(0.32, 0.18, pDist) * step(0.62, pRand);
-  vec3 pebbleCol = mix(vec3(0.55,0.50,0.42), vec3(0.30,0.28,0.25), hash(pCell+0.5));
-  base = mix(base, pebbleCol, pebble*0.9);
-
-  // ── Dense seaweed patches ─────────────────────────────────────────────────
-  float weedMask = smoothstep(0.58,0.80,fbm(uv*7.0+5.8))
-                 * smoothstep(0.52,0.70,fbm(uv*4.5+8.3));
-  // Seaweed sways gently with time
-  vec2 weedUV = uv + vec2(sin(uTime*0.4+uv.y*8.0)*0.008, 0.0);
-  float weedDetail = fbm(weedUV*14.0+dr)*0.5+0.5;
-  vec3 weedCol = mix(vec3(0.08,0.28,0.10), vec3(0.18,0.45,0.15), weedDetail);
-  base = mix(base, weedCol, weedMask*0.80);
-  // Lighter tips on seaweed
-  float tips = smoothstep(0.65,0.85,weedDetail) * weedMask;
-  base = mix(base, vec3(0.30,0.60,0.22), tips*0.5);
-
-  // ── Coral patches ─────────────────────────────────────────────────────────
-  float coralMask = smoothstep(0.62,0.78,fbm(uv*6.0+11.3))
-                  * (1.0 - rockMask)
-                  * (1.0 - weedMask*0.8);
-  float coralType = hash(floor(uv*12.0));
-  vec3 coralCol = coralType > 0.6
-    ? vec3(0.90, 0.35, 0.25)   // red coral
-    : coralType > 0.3
-      ? vec3(0.95, 0.65, 0.20) // orange coral
-      : vec3(0.85, 0.30, 0.55); // pink coral
-  float coralDetail = fbm(uv*20.0+2.2)*0.5+0.5;
-  base = mix(base, coralCol * (0.7+0.3*coralDetail), coralMask*0.75);
-
-  // ── Shell fragments ───────────────────────────────────────────────────────
-  vec2 sCell = floor(uv*60.0);
-  float sRand = hash(sCell+7.7);
-  float sDist = length(fract(uv*60.0) - vec2(0.5));
-  float shell = smoothstep(0.28,0.10,sDist) * step(0.82, sRand);
-  vec3 shellCol = mix(vec3(0.92,0.88,0.80), vec3(0.75,0.65,0.55), hash(sCell+3.3));
-  base = mix(base, shellCol, shell*0.95);
-
-  // ── Overall depth tint — deeper blue in flat areas ────────────────────────
-  float depth = 1.0 - smoothstep(0.35, 0.65, sandMix);
-  base = mix(base, base * vec3(0.65, 0.80, 0.90), depth*0.25);
-
-  return base;
-}
-
-// ── Height fetch (handles UINT8 16-bit encoding) ──────────────────────────
-#ifdef UINT8_MODE
-  float H(vec2 uv) {
-    vec4 s = texture2D(uWater, uv);
-    return (s.r + s.g / 255.0) * 2.0 - 1.0;
+function createReverb(duration) {
+  const sr = audioCtx.sampleRate;
+  const len = sr * (duration || 1);
+  const buf = audioCtx.createBuffer(2, len, sr);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 3);
   }
-#else
-  float H(vec2 uv) { return texture2D(uWater, uv).r * 2.0 - 1.0; }
-#endif
-
-// ── GGX microfacet specular (replaces Phong — realistic water sparkle) ────
-float GGX(float NdotH, float rough) {
-  float a2 = rough*rough*rough*rough;
-  float d  = NdotH*NdotH*(a2-1.0)+1.0;
-  return a2 / (3.14159*d*d + 1e-5);
+  reverbNode.buffer = buf;
 }
 
-void main() {
-  vec2 uv = vUV;
-  vec2 tx = uTexel * 2.0;
+// ── FILE LOAD ──
+$('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const isVideo = file.type.startsWith('video');
+  const vid = $('video-el'), aud = $('audio-el');
 
-  // ── Sobel normal from height field (8-tap, smoother than 4-tap) ─────────
-  float hL  = H(uv - vec2(tx.x, 0.0));
-  float hR  = H(uv + vec2(tx.x, 0.0));
-  float hU  = H(uv + vec2(0.0,  tx.y));
-  float hD  = H(uv - vec2(0.0,  tx.y));
-  float hLU = H(uv + vec2(-tx.x,  tx.y));
-  float hRU = H(uv + vec2( tx.x,  tx.y));
-  float hLD = H(uv + vec2(-tx.x, -tx.y));
-  float hRD = H(uv + vec2( tx.x, -tx.y));
-
-  float ns = 4.8;
-  float dX = (hRD + 2.0*hR + hRU - hLD - 2.0*hL - hLU) * ns / uAspect;
-  float dY = (hLU + 2.0*hU + hRU - hLD - 2.0*hD - hRD) * ns;
-  vec3 normal = normalize(vec3(-dX, -dY, 1.0));
-
-  float h   = H(uv);
-  vec3  V   = vec3(0.0, 0.0, 1.0);
-  vec3  L   = normalize(vec3(0.40, 0.68, 1.0));
-  vec3  Hv  = normalize(V + L);   // halfway vector
-
-  // ── Fresnel (Schlick, water IOR 1.333) ───────────────────────────────────
-  float cosI   = max(dot(normal, V), 0.0);
-  float fresnel = 0.020 + 0.980 * pow(1.0 - cosI, 5.0);
-  fresnel = clamp(fresnel, 0.0, 1.0);
-
-  // ── Refraction ───────────────────────────────────────────────────────────
-  vec2 refOff = vec2(normal.x / uAspect, normal.y) * 0.065;
-  vec2 refUV  = clamp(uv + refOff, 0.001, 0.999);
-  vec3 seabed = getSeabed(refUV + vec2(uTime * 0.003, 0.0));
-
-  // Beer-Lambert water extinction
-  seabed *= exp(-vec3(0.70, 0.12, 0.04) * 2.5);
-
-  // ── Underwater light rays (god rays through surface) ─────────────────────
-  // Ray direction based on surface normal perturbation
-  vec2 rayDir = vec2(normal.x * 0.8, normal.y * 0.8);
-  float rayLen = 0.18;
-  float rays = 0.0;
-  // March 6 steps along ray direction sampling height field
-  for (int r = 0; r < 6; r++) {
-    float t = float(r) / 5.0;
-    vec2 rayUV = refUV + rayDir * rayLen * t;
-    float rayH = H(clamp(rayUV, 0.001, 0.999));
-    // Bright where surface is peaked (focusing light downward)
-    rays += smoothstep(0.0, 0.35, rayH) * (1.0 - t * 0.6);
-  }
-  rays /= 6.0;
-  // Animate the rays with time and add noise for natural scatter
-  float rayNoise = fbm(refUV * 6.0 + uTime * 0.4) * 0.5 + 0.5;
-  float rayNoise2 = fbm(refUV * 12.0 - uTime * 0.3 + 2.1) * 0.5 + 0.5;
-  rays *= rayNoise * rayNoise2;
-  // Light ray color — warm sunlight filtering through water
-  vec3 rayCol = vec3(0.55, 0.90, 0.75) * rays * 1.8;
-  seabed += rayCol;
-  // Secondary deep blue scatter between rays
-  float scatter = (1.0 - rays) * fbm(refUV * 4.0 + uTime * 0.2) * 0.12;
-  seabed += vec3(0.02, 0.08, 0.22) * scatter;
-
-  // ── Caustics ─────────────────────────────────────────────────────────────
-  // 1) Surface curvature (wave focusing)
-  float lap = hU + hD + hL + hR - 4.0*h;
-  float curvCaus = pow(max(0.0, -lap * 9.0), 1.6) * 2.0;
-  // 2) Animated interference pattern
-  vec2 cUV = refUV * vec2(uAspect*12.0, 12.0);
-  float ca = sin(cUV.x*1.9 + uTime*2.5)*sin(cUV.y*1.8 + uTime*2.1)
-           + sin(cUV.x*1.3 - uTime*1.7 + 1.1)*sin(cUV.y*1.4 - uTime*2.0 + 0.8)
-           + sin((cUV.x+cUV.y)*1.1 + uTime*1.4)*0.5;
-  float animCaus = pow(max(0.0, ca*0.2+0.5), 3.8) * 0.6;
-  seabed *= 1.0 + curvCaus + animCaus;
-
-  // ── Sky reflection ────────────────────────────────────────────────────────
-  vec3 R   = reflect(-L, normal);
-  vec3 sky = getSky(R.xy * 0.5 + 0.5);
-
-  // ── Water body tint ───────────────────────────────────────────────────────
-  vec3 deepCol    = vec3(0.008, 0.07, 0.20);
-  vec3 shallowCol = vec3(0.05,  0.36, 0.62);
-  vec3 waterCol   = mix(deepCol, shallowCol, clamp(0.5 + h*2.0, 0.0, 1.0));
-
-  // ── Compose via Fresnel ───────────────────────────────────────────────────
-  vec3 col = mix(seabed, sky, clamp(fresnel*0.90 + 0.05, 0.0, 1.0));
-  col = mix(col, waterCol, 0.18);
-
-  // ── Sub-surface scattering (light through wave crests) ───────────────────
-  float sss = smoothstep(-0.05, 0.30, h) * max(0.0, dot(normal, L));
-  col += vec3(0.00, 0.50, 0.72) * sss * 0.30;
-
-  // ── GGX specular ─────────────────────────────────────────────────────────
-  float rough  = max(0.012, 0.012 + abs(h)*0.08);  // rougher at crests
-  float NdotH  = max(dot(normal, Hv), 0.0);
-  float NdotL  = max(dot(normal, L),  0.0);
-  float spec   = GGX(NdotH, rough);
-  col += vec3(1.00, 0.97, 0.88) * spec * NdotL * 0.20 * fresnel;
-  // Wide shimmer halo
-  float RdotV  = max(dot(R, V), 0.0);
-  col += vec3(0.82, 0.91, 1.00) * pow(RdotV, 40.0) * 0.22;
-
-  // ── Foam at wave crests ───────────────────────────────────────────────────
-  float crest = smoothstep(0.14, 0.38, h);
-  float foamN1 = pow(fbm(uv*22.0 + uTime*0.8), 1.2);
-  float foamN2 = pow(fbm(uv*44.0 - uTime*0.5 + 3.7), 1.6);
-  float foamN3 = pow(fbm(uv*11.0 + uTime*0.3 + 1.1), 1.0);
-  float foamMask = foamN1 * 0.5 + foamN2 * 0.3 + foamN3 * 0.2;
-  // Foam thickness varies with wave height
-  float foamThick = smoothstep(0.10, 0.45, h) * foamMask;
-  col = mix(col, vec3(0.97, 0.99, 1.00), foamThick * 0.92);
-  // Foam edge bubble detail
-  float bubbles = step(0.72, hash(floor(uv * 180.0 + uTime * 0.3)));
-  col = mix(col, vec3(1.00, 1.00, 1.00), bubbles * crest * 0.35);
-  // Trailing wake foam with fadeout
-  float wake = smoothstep(0.05, 0.22, abs(h)) * fbm(uv*18.0 + uTime*0.4) * 0.18;
-  float wakeDetail = fbm(uv*36.0 - uTime*0.6) * 0.5 + 0.5;
-  col += vec3(0.75, 0.88, 1.00) * wake * wakeDetail;
-  // Thin foam streaks along troughs
-  float streak = smoothstep(0.60, 0.80, fbm(uv*8.0 + uTime*0.15)) * smoothstep(-0.25, -0.05, h) * 0.12;
-  col += vec3(0.80, 0.90, 1.00) * streak;
-
-  // ── Horizon haze ─────────────────────────────────────────────────────────
-  float fog = pow(clamp(1.0 - vUV.y*1.6, 0.0, 1.0), 4.0) * 0.22;
-  col = mix(col, vec3(0.26, 0.52, 0.80), fog);
-
-  // ── Vignette ─────────────────────────────────────────────────────────────
-  vec2 vd = (vUV*2.0-1.0) * vec2(uAspect, 1.0);
-  col *= clamp(1.0 - dot(vd,vd)*0.055, 0.0, 1.0);
-
-  // ── Filmic tone-map + gamma ───────────────────────────────────────────────
-  col = col*(1.0+col*0.14)/(col+0.9)*1.08;
-  col = pow(max(col, vec3(0.0)), vec3(1.0/2.2));
-
-  gl_FragColor = vec4(col, 1.0);
-}`;
-
-// ─── GL Helpers ─────────────────────────────────────────────────────────────
-function mkShader(type, src) {
-  const s = gl.createShader(type);
-  gl.shaderSource(s, src);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
-    throw new Error('Shader compile: ' + gl.getShaderInfoLog(s));
-  return s;
-}
-
-function mkProg(fsrc) {
-  const p = gl.createProgram();
-  gl.attachShader(p, mkShader(gl.VERTEX_SHADER,   VERT));
-  gl.attachShader(p, mkShader(gl.FRAGMENT_SHADER, fsrc));
-  gl.linkProgram(p);
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
-    throw new Error('Program link: ' + gl.getProgramInfoLog(p));
-  const u = {};
-  const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS);
-  for (let i = 0; i < n; i++) {
-    const info = gl.getActiveUniform(p, i);
-    u[info.name] = gl.getUniformLocation(p, info.name);
-  }
-  return { p, u };
-}
-
-let simProg, renderProg;
-try {
-  simProg    = mkProg(SIM_FRAG);
-  renderProg = mkProg(RENDER_FRAG);
-} catch (e) {
-  console.error(e);
-  document.body.innerHTML = `<pre style="color:#f88;padding:20px;font-size:11px;white-space:pre-wrap">${e.message}</pre>`;
-  throw e;
-}
-
-// Fullscreen quad
-const qbuf = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, qbuf);
-gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-
-function bindQuad(prog) {
-  gl.bindBuffer(gl.ARRAY_BUFFER, qbuf);
-  const loc = gl.getAttribLocation(prog.p, 'aPos');
-  gl.enableVertexAttribArray(loc);
-  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-}
-
-// ─── FBOs ───────────────────────────────────────────────────────────────────
-function mkInitData() {
-  const n = S * S * 4;
-  if (!UINT8) {
-    // float or half-float: 0.5 encodes to resting height 0
-    if (FTYPE === gl.FLOAT)              return new Float32Array(n).fill(0.5);
-    if (FTYPE === extHalfF.HALF_FLOAT_OES) return new Uint16Array(n).fill(0x3800); // 0.5 in fp16
-  }
-  // UINT8 mode: enc16(0) → t=0.5 → t255=127.5 → hi=127/255, lo=0.5
-  // Byte values: hi=127 (≈127/255), lo=128 (round(0.5*255))
-  // Layout per texel: [curr_hi, curr_lo, prev_hi, prev_lo]
-  const d = new Uint8Array(n);
-  for (let i = 0; i < n; i += 4) { d[i]=127; d[i+1]=128; d[i+2]=127; d[i+3]=128; }
-  return d;
-}
-
-function mkFBO() {
-  const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, S, S, 0, gl.RGBA, FTYPE, mkInitData());
-  const f = USE_LINEAR ? gl.LINEAR : gl.NEAREST;
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, f);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, f);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  const fbo = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  return { tex, fbo };
-}
-
-let fboA = mkFBO();
-let fboB = mkFBO();
-
-// ─── Input ──────────────────────────────────────────────────────────────────
-const ptr = { x:0.5, y:0.5, active:false, prevX:0.5, prevY:0.5 };
-let hintDismissed = false;
-
-// FIX: divide by CSS pixels (CW/CH), NOT canvas physical pixels (W/H)
-// Touch/mouse events always give clientX/Y in CSS coordinate space
-function toUV(cx, cy) {
-  return { x: cx / CW, y: 1.0 - cy / CH };
-}
-
-function dismissHint() {
-  if (hintDismissed) return;
-  hintDismissed = true;
-  hint.classList.add('fade');
-  setTimeout(() => { hint.style.display = 'none'; }, 3000);
-}
-
-function onDown(e) {
-  const t = e.touches ? e.touches[0] : e;
-  const uv = toUV(t.clientX, t.clientY);
-  ptr.prevX = uv.x; ptr.prevY = uv.y;
-  ptr.x = uv.x; ptr.y = uv.y; ptr.active = true;
-  dismissHint();
-}
-
-function onMove(e) {
-  if (!ptr.active) return;
-  const t = e.touches ? e.touches[0] : e;
-  ptr.prevX = ptr.x; ptr.prevY = ptr.y;
-  const uv = toUV(t.clientX, t.clientY);
-  ptr.x = uv.x; ptr.y = uv.y;
-}
-
-function onUp() { ptr.active = false; }
-
-// Mouse
-canvas.addEventListener('mousedown', onDown);
-canvas.addEventListener('mousemove', onMove);
-window.addEventListener('mouseup',   onUp);
-
-// FIX: passive:false on ALL touch events so we can preventDefault
-// This stops iPad Safari hijacking the gesture as scroll/zoom
-canvas.addEventListener('touchstart',  e => { e.preventDefault(); onDown(e); }, { passive:false });
-canvas.addEventListener('touchmove',   e => { e.preventDefault(); onMove(e); }, { passive:false });
-canvas.addEventListener('touchend',    e => { e.preventDefault(); onUp();    }, { passive:false });
-canvas.addEventListener('touchcancel', e => { e.preventDefault(); onUp();    }, { passive:false });
-
-// ─── Ambient drops removed — interaction only ────────────────────────────
-const drops = [];
-let lastDrop = 0;
-
-function maybeSpawnDrop(now) {
-  // No auto drops — water only reacts to touch/mouse
-}
-
-// ─── Simulation step ────────────────────────────────────────────────────────
-function simulate(src, dst, mx, my, active, str) {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fbo);
-  gl.viewport(0, 0, S, S);
-  gl.useProgram(simProg.p);
-  bindQuad(simProg);
-  const u = simProg.u;
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, src.tex);
-  gl.uniform1i(u.uState,    0);
-  gl.uniform2f(u.uTexel,    1.0/S, 1.0/S);
-  gl.uniform2f(u.uMouse,    mx, my);
-  gl.uniform1f(u.uRadius,   0.046);
-  gl.uniform1f(u.uStrength, active ? str : 0.0);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-}
-
-// ─── Render ─────────────────────────────────────────────────────────────────
-let time = 0;
-
-function render(src) {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(0, 0, W, H);
-  gl.useProgram(renderProg.p);
-  bindQuad(renderProg);
-  const u = renderProg.u;
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, src.tex);
-  gl.uniform1i(u.uWater,  0);
-  gl.uniform2f(u.uTexel,  1.0/S, 1.0/S);
-  gl.uniform1f(u.uTime,   time);
-  gl.uniform1f(u.uAspect, W / H);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-}
-
-// ─── Main loop ──────────────────────────────────────────────────────────────
-function frame(now) {
-  requestAnimationFrame(frame);
-  time = now * 0.001;
-
-  maybeSpawnDrop(now);
-
-  let mx = ptr.x, my = ptr.y, mactive = ptr.active, mstr = 0.18;
-
-  // No ambient drops
-
-  // Drag speed → wave strength
-  if (ptr.active) {
-    const spd = Math.hypot(ptr.x - ptr.prevX, ptr.y - ptr.prevY);
-    mstr = Math.min(0.12 + spd * 20.0, 0.60);
+  if (isVideo) {
+    vid.src = url; vid.style.display = ''; aud.style.display = 'none'; mediaEl = vid;
+  } else {
+    aud.src = url; aud.style.display = ''; vid.style.display = 'none'; mediaEl = aud;
   }
 
-  // 8 substeps per frame for sharper waves
-  for (let i = 0; i < 8; i++) {
-    simulate(fboA, fboB, mx, my, mactive && i < 3, mstr);
-    const tmp = fboA; fboA = fboB; fboB = tmp;
-  }
+  $('drop-zone').classList.add('hidden');
+  initAudio(mediaEl);
+  syncPlaybackSpeed();
+  mediaEl.play(); isPlaying = true; updatePlayBtn();
 
-  render(fboA);
+  $('info-file').textContent = file.name.length > 22 ? file.name.slice(0,20)+'…' : file.name;
+  mediaEl.addEventListener('loadedmetadata', () => {
+    $('info-dur').textContent = fmt(mediaEl.duration);
+  }, { once: true });
+
+  mediaEl.addEventListener('timeupdate', onTimeUpdate);
+  mediaEl.addEventListener('ended', () => { isPlaying = false; updatePlayBtn(); });
+  startVisLoop();
+  toast('Loaded · ' + file.name.split('.').pop().toUpperCase());
+});
+
+// ── PROGRESS ──
+function onTimeUpdate() {
+  if (!mediaEl || !mediaEl.duration) return;
+  const pct = mediaEl.currentTime / mediaEl.duration * 100;
+  $('progress-bar-fill').style.width = pct + '%';
+  $('time-display').textContent = fmt(mediaEl.currentTime) + ' / ' + fmt(mediaEl.duration);
+  if (ambientGlow && $('video-el').style.display !== 'none') sampleAmbient();
 }
 
-requestAnimationFrame(frame);
+$('progress-bar-wrap').addEventListener('click', e => {
+  if (!mediaEl) return;
+  const r = e.currentTarget.getBoundingClientRect();
+  mediaEl.currentTime = ((e.clientX - r.left) / r.width) * mediaEl.duration;
+});
+
+// ── PLAY CONTROLS ──
+$('btn-play').addEventListener('click', () => {
+  if (!mediaEl) { $('file-input').click(); return; }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  isPlaying ? (mediaEl.pause(), isPlaying=false) : (mediaEl.play(), isPlaying=true);
+  updatePlayBtn();
+});
+$('btn-skip-back').addEventListener('click', () => { if (mediaEl) mediaEl.currentTime = Math.max(0, mediaEl.currentTime-10); });
+$('btn-skip-fwd').addEventListener('click', () => { if (mediaEl) mediaEl.currentTime = Math.min(mediaEl.duration||0, mediaEl.currentTime+10); });
+$('btn-loop').addEventListener('click', function() {
+  if (!mediaEl) return;
+  mediaEl.loop = !mediaEl.loop;
+  this.classList.toggle('active', mediaEl.loop);
+});
+function updatePlayBtn() {
+  $('btn-play').innerHTML = isPlaying ? '<i class="ti ti-player-pause"></i>' : '<i class="ti ti-player-play"></i>';
+}
+function fmt(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m + ':' + (sec<10?'0':'')+sec;
+}
+
+// ── VOLUME ──
+$('vol-slider').addEventListener('input', function() { if (gainNode) gainNode.gain.value = this.value; });
+
+// ── PLAYBACK SPEED ──
+function syncPlaybackSpeed() { if (mediaEl) mediaEl.playbackRate = parseFloat($('playback-speed').value); }
+
+// ── EQ ──
+document.querySelectorAll('.eq-band').forEach((el, i) => {
+  el.addEventListener('input', function() {
+    if (eqNodes[i]) eqNodes[i].gain.value = parseFloat(this.value);
+  });
+});
+
+// ── SLIDERS WIRING ──
+function wireSlider(id, valId, suffix, cb) {
+  const el = $(id), val = $(valId);
+  el.addEventListener('input', function() {
+    val.textContent = parseFloat(this.value).toFixed(suffix==='' ? 0 : 2) + suffix;
+    cb(parseFloat(this.value));
+  });
+}
+
+wireSlider('bass-boost','bass-boost-val','', v => { if (bassBoostNode) bassBoostNode.gain.value = v; });
+wireSlider('treble','treble-val','', v => { if (trebleNode) trebleNode.gain.value = v; });
+wireSlider('compression','compression-val','', v => { if (dynamicsCompressor) dynamicsCompressor.ratio.value = v; });
+wireSlider('warmth','warmth-val','', () => {});
+wireSlider('reverb','reverb-val','', v => { if (reverbGainNode) reverbGainNode.gain.value = v; });
+wireSlider('delay-mix','delay-mix-val','', v => { if (delayGainNode) delayGainNode.gain.value = v; });
+wireSlider('delay-time','delay-time-val','', v => { if (delayNode) delayNode.delayTime.value = v; });
+wireSlider('stereo-width','stereo-width-val','', () => {});
+
+$('playback-speed').addEventListener('input', function() {
+  $('playback-speed-val').textContent = parseFloat(this.value).toFixed(2) + '×';
+  syncPlaybackSpeed();
+});
+$('pitch-shift').addEventListener('input', function() {
+  $('pitch-shift-val').textContent = parseFloat(this.value).toFixed(1);
+});
+
+// Video filters
+function applyVideoFilter() {
+  const b = $('v-brightness').value, c = $('v-contrast').value, s = $('v-saturation').value, w = parseFloat($('v-warmth').value);
+  const vid = $('video-el');
+  let sepia = Math.max(0, w), hue = w < 0 ? Math.round(w * 60) : 0;
+  vid.style.filter = `brightness(${b}) contrast(${c}) saturate(${s}) sepia(${sepia}) hue-rotate(${hue}deg)`;
+}
+['v-brightness','v-contrast','v-saturation','v-warmth'].forEach(id => {
+  const valId = id + '-val';
+  $(id).addEventListener('input', function() {
+    $(valId).textContent = parseFloat(this.value).toFixed(2);
+    applyVideoFilter();
+  });
+});
+
+// ── TOGGLES ──
+function makeToggle(id, cb) {
+  const el = $(id);
+  el.addEventListener('click', function() {
+    this.classList.toggle('on');
+    cb(this.classList.contains('on'));
+  });
+  return el;
+}
+
+makeToggle('tog-ambient', v => {
+  ambientGlow = v;
+  if (!v) { $('ambient-glow').classList.remove('active'); $('ambient-glow').style.opacity = 0; }
+});
+makeToggle('tog-vignette', v => { vignette = v; drawOverlay(); });
+makeToggle('tog-scanlines', v => { scanlines = v; drawOverlay(); });
+makeToggle('tog-grain', v => { grain = v; startGrain(); });
+makeToggle('tog-screen', v => { if (v && navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{}); });
+makeToggle('tog-infostrip', v => { $('info-strip').style.display = v ? 'flex' : 'none'; });
+makeToggle('tog-autohide', v => { autohide = v; });
+makeToggle('tog-loudness', v => { loudnessEnabled = v; if (dynamicsCompressor) dynamicsCompressor.threshold.value = v ? -24 : -50; toast(v ? 'Loudness Norm. On' : 'Loudness Norm. Off'); });
+makeToggle('tog-autoeq', v => { autoeqEnabled = v; toast(v ? 'Auto EQ On' : 'Auto EQ Off'); });
+makeToggle('tog-noisegate', v => { noiseGateEnabled = v; toast(v ? 'Noise Gate On' : 'Noise Gate Off'); });
+
+// ── CANVAS OVERLAY (vignette, scan lines) ──
+function drawOverlay() {
+  const canvas = $('canvas-overlay');
+  const wrap = $('player-wrap');
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (vignette) {
+    const grd = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.2,canvas.width/2,canvas.height/2,canvas.height*0.9);
+    grd.addColorStop(0,'rgba(0,0,0,0)');
+    grd.addColorStop(1,'rgba(0,0,0,0.65)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  if (scanlines) {
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    for (let y = 0; y < canvas.height; y += 3) ctx.fillRect(0,y,canvas.width,1);
+  }
+}
+
+// ── GRAIN ──
+let grainFrameId;
+function startGrain() {
+  cancelAnimationFrame(grainFrameId);
+  const canvas = $('canvas-overlay');
+  if (!grain) { drawOverlay(); return; }
+  function loop() {
+    drawOverlay();
+    const ctx = canvas.getContext('2d');
+    const iData = ctx.createImageData(canvas.width, canvas.height);
+    const d = iData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const n = (Math.random()*50)|0;
+      d[i]=d[i+1]=d[i+2]=n; d[i+3]=15;
+    }
+    ctx.putImageData(iData, 0, 0);
+    if (grain) grainFrameId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ── AMBIENT GLOW ──
+const _tmpCanvas = document.createElement('canvas');
+const _tmpCtx = _tmpCanvas.getContext('2d');
+function sampleAmbient() {
+  const vid = $('video-el');
+  if (!vid.videoWidth) return;
+  _tmpCanvas.width = 16; _tmpCanvas.height = 9;
+  _tmpCtx.drawImage(vid, 0, 0, 16, 9);
+  const d = _tmpCtx.getImageData(0,0,16,9).data;
+  let r=0,g=0,b=0,n=0;
+  for (let i=0;i<d.length;i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+  r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
+  const gl = $('ambient-glow');
+  gl.style.setProperty('--glow-color', `rgb(${r},${g},${b})`);
+  gl.style.background = `radial-gradient(ellipse at center, rgb(${r},${g},${b}) 0%, transparent 70%)`;
+  gl.classList.add('active');
+}
+
+// ── VISUALIZER ──
+let visCvs, visCtx;
+function startVisLoop() {
+  visCvs = $('visualizer-canvas');
+  visCtx = visCvs.getContext('2d');
+  cancelAnimationFrame(animFrameId);
+  function loop() {
+    animFrameId = requestAnimationFrame(loop);
+    if (!analyserNode || visStyle === 'off') { if (visCtx) { visCtx.clearRect(0,0,visCvs.width,visCvs.height); } return; }
+    visCvs.width = visCvs.offsetWidth;
+    visCvs.height = visCvs.offsetHeight;
+    const W = visCvs.width, H = visCvs.height;
+    visCtx.clearRect(0,0,W,H);
+    const bufLen = analyserNode.frequencyBinCount;
+    const data = new Uint8Array(bufLen);
+    analyserNode.getByteFrequencyData(data);
+
+    if (visStyle === 'bars') {
+      const bw = (W / bufLen) * 1.8;
+      for (let i = 0; i < bufLen; i++) {
+        const h = (data[i] / 255) * H;
+        const alpha = 0.4 + (data[i]/255)*0.6;
+        visCtx.fillStyle = `rgba(184,169,138,${alpha})`;
+        visCtx.fillRect(i * (W/bufLen), H-h, bw, h);
+      }
+    } else if (visStyle === 'wave') {
+      analyserNode.getByteTimeDomainData(data);
+      visCtx.strokeStyle = 'rgba(184,169,138,0.7)';
+      visCtx.lineWidth = 1.5;
+      visCtx.beginPath();
+      const sliceW = W / bufLen;
+      let x = 0;
+      for (let i = 0; i < bufLen; i++) {
+        const y = (data[i] / 128) * (H/2);
+        i === 0 ? visCtx.moveTo(x,y) : visCtx.lineTo(x,y);
+        x += sliceW;
+      }
+      visCtx.stroke();
+    } else if (visStyle === 'circle') {
+      analyserNode.getByteFrequencyData(data);
+      const cx = W/2, cy = H/2, r = Math.min(cx,cy)*0.5;
+      for (let i = 0; i < bufLen; i++) {
+        const angle = (i / bufLen) * Math.PI * 2 - Math.PI/2;
+        const amp = (data[i]/255) * (H*0.4);
+        visCtx.strokeStyle = `rgba(184,169,138,${0.3+data[i]/255*0.7})`;
+        visCtx.lineWidth = 1;
+        visCtx.beginPath();
+        visCtx.moveTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
+        visCtx.lineTo(cx + Math.cos(angle)*(r+amp), cy + Math.sin(angle)*(r+amp));
+        visCtx.stroke();
+      }
+    }
+  }
+  loop();
+}
+
+function setVisStyle(s) {
+  visStyle = s;
+  document.querySelectorAll('[id^="vis-"]').forEach(b => b.classList.remove('active'));
+  $('vis-'+s)?.classList.add('active');
+}
+
+// ── PANEL TABS ──
+document.querySelectorAll('.ptab').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+    this.classList.add('active');
+    $('tab-'+this.dataset.tab).style.display = '';
+  });
+});
+
+// ── PANEL TOGGLE ──
+$('btn-panel').addEventListener('click', function() {
+  const panel = $('side-panel');
+  panel.classList.toggle('collapsed');
+  this.classList.toggle('active', !panel.classList.contains('collapsed'));
+});
+
+// ── FULLSCREEN ──
+$('btn-fullscreen').addEventListener('click', () => {
+  const el = $('player-wrap');
+  if (!document.fullscreenElement) {
+    el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
+  } else {
+    document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+  }
+});
+
+// ── PRESETS ──
+const PRESETS = {
+  cinema:  { eq:[2,1,0,-1,-1,1,2,1], bassBoost:3, treble:2, compression:8, reverb:0.2, delayMix:0, stereoWidth:1.2, speed:1, label:'CINEMA' },
+  music:   { eq:[3,2,0,0,1,2,3,3], bassBoost:5, treble:3, compression:4, reverb:0.1, delayMix:0, stereoWidth:1.4, speed:1, label:'MUSIC' },
+  podcast: { eq:[-2,-2,1,3,3,1,0,-1], bassBoost:0, treble:1, compression:12, reverb:0, delayMix:0, stereoWidth:0.8, speed:1, label:'PODCAST' },
+  night:   { eq:[4,3,0,-2,-2,0,1,2], bassBoost:6, treble:-2, compression:6, reverb:0.3, delayMix:0, stereoWidth:1.0, speed:1, label:'NIGHT' },
+  bass:    { eq:[8,6,3,0,-1,-1,0,0], bassBoost:12, treble:0, compression:10, reverb:0.1, delayMix:0, stereoWidth:1.1, speed:1, label:'BASS HEAVY' },
+  vocal:   { eq:[-3,-2,1,4,4,3,1,-1], bassBoost:0, treble:2, compression:8, reverb:0.15, delayMix:0, stereoWidth:0.9, speed:1, label:'VOCAL BOOST' },
+  spatial: { eq:[2,1,0,0,1,2,3,2], bassBoost:2, treble:2, compression:4, reverb:0.6, delayMix:0.25, stereoWidth:1.8, speed:1, label:'SPATIAL' },
+  lofi:    { eq:[3,2,1,-1,-2,-3,-4,-5], bassBoost:4, treble:-4, compression:15, reverb:0.4, delayMix:0.1, stereoWidth:0.7, speed:0.95, label:'LO-FI' },
+  concert: { eq:[2,1,0,0,0,1,2,3], bassBoost:4, treble:2, compression:6, reverb:0.8, delayMix:0.15, stereoWidth:1.6, speed:1, label:'CONCERT' },
+  flat:    { eq:[0,0,0,0,0,0,0,0], bassBoost:0, treble:0, compression:1, reverb:0, delayMix:0, stereoWidth:1.0, speed:1, label:'FLAT' },
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name]; if (!p) return;
+  document.querySelectorAll('#tab-presets .preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tab-presets .preset-btn').forEach(b => { if (b.getAttribute('onclick') === `applyPreset('${name}')`) b.classList.add('active'); });
+
+  document.querySelectorAll('.eq-band').forEach((el, i) => {
+    el.value = p.eq[i];
+    if (eqNodes[i]) eqNodes[i].gain.value = p.eq[i];
+  });
+
+  setSlider('bass-boost', p.bassBoost, 'bass-boost-val', '', v => { if (bassBoostNode) bassBoostNode.gain.value = v; });
+  setSlider('treble', p.treble, 'treble-val', '', v => { if (trebleNode) trebleNode.gain.value = v; });
+  setSlider('compression', p.compression, 'compression-val', '', v => { if (dynamicsCompressor) dynamicsCompressor.ratio.value = v; });
+  setSlider('reverb', p.reverb, 'reverb-val', '', v => { if (reverbGainNode) reverbGainNode.gain.value = v; });
+  setSlider('delay-mix', p.delayMix, 'delay-mix-val', '', v => { if (delayGainNode) delayGainNode.gain.value = v; });
+  setSlider('stereo-width', p.stereoWidth, 'stereo-width-val', '', () => {});
+  setSlider('playback-speed', p.speed, 'playback-speed-val', '×', () => syncPlaybackSpeed());
+
+  activePreset = p.label;
+  $('preset-label').textContent = p.label;
+  toast('Preset: ' + p.label);
+}
+
+const VIS_PRESETS = {
+  dark:  { brightness:0.7, contrast:1.3, saturation:0.8, warmth:0.0 },
+  warm:  { brightness:1.0, contrast:1.1, saturation:1.2, warmth:0.2 },
+  vivid: { brightness:1.1, contrast:1.3, saturation:1.8, warmth:0.0 },
+  cool:  { brightness:1.0, contrast:1.1, saturation:1.0, warmth:-0.2 },
+  noir:  { brightness:0.9, contrast:1.6, saturation:0.0, warmth:0.0 },
+  clear: { brightness:1.0, contrast:1.0, saturation:1.0, warmth:0.0 },
+};
+
+function applyVisPreset(name) {
+  const p = VIS_PRESETS[name]; if (!p) return;
+  setSlider('v-brightness', p.brightness, 'v-brightness-val', '', () => {});
+  setSlider('v-contrast', p.contrast, 'v-contrast-val', '', () => {});
+  setSlider('v-saturation', p.saturation, 'v-saturation-val', '', () => {});
+  setSlider('v-warmth', p.warmth, 'v-warmth-val', '', () => {});
+  applyVideoFilter();
+  toast('Visual: ' + name.charAt(0).toUpperCase() + name.slice(1));
+}
+
+function setSlider(id, val, valId, suffix, cb) {
+  const el = $(id); if (!el) return;
+  el.value = val;
+  const str = typeof val === 'number' ? (suffix === '×' ? val.toFixed(2)+suffix : val.toFixed(suffix===''&&Number.isInteger(val)?0:2)) : val;
+  $(valId).textContent = str;
+  cb(val);
+}
+
+function resetAll() {
+  applyPreset('flat');
+  applyVisPreset('clear');
+  $('playback-speed').value = 1; $('playback-speed-val').textContent = '1.00×'; syncPlaybackSpeed();
+  $('pitch-shift').value = 0; $('pitch-shift-val').textContent = '0';
+  $('preset-label').textContent = 'NO PRESET';
+  toast('Settings reset');
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg) {
+  const el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ── SETTINGS BTN ──
+$('btn-settings').addEventListener('click', () => {
+  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+  document.querySelector('[data-tab="settings"]').classList.add('active');
+  $('tab-settings').style.display = '';
+  const panel = $('side-panel');
+  if (panel.classList.contains('collapsed')) { panel.classList.remove('collapsed'); $('btn-panel').classList.add('active'); }
+});
+
+// ── RESIZE ──
+window.addEventListener('resize', drawOverlay);
+
+// ── WAKE LOCK ──
+if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{});
+
+// ── INIT ──
+startVisLoop();
   </script>
 </body>
 
