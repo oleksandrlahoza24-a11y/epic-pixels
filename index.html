@@ -187,121 +187,295 @@
         /* iPad / Touch Controls Container */
         #controls {
             position: absolute;
-            bottom: 24px;
+            bottom: 20px;
             left: 0;
             width: 100%;
-            height: 200px;
+            height: 210px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 0 40px;
+            align-items: flex-end;
+            padding: 0 28px 10px 28px;
             box-sizing: border-box;
             z-index: 20;
+            pointer-events: none;
         }
 
-        /* D-Pad Layout */
-        .dpad {
+
+
+
+        /* ---- PIXEL ART JOYSTICK ---- */
+        #joystick-zone {
             position: relative;
-            width: 190px;
-            height: 190px;
+            width: 168px;
+            height: 168px;
+            pointer-events: all;
+            touch-action: none;
+            image-rendering: pixelated;
         }
 
-
-
-
-        .btn {
+        #joystick-base {
             position: absolute;
-            width: 64px;
-            height: 64px;
-            background: #1a1a2e;
-            border: none;
-            border-radius: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            image-rendering: pixelated;
-            box-shadow: 4px 4px 0px #000, inset 2px 2px 0px #4a4a6a, inset -2px -2px 0px #0a0a1a;
-            cursor: pointer;
-            outline: 2px solid #000;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-
-
-
-        .btn:active {
-            box-shadow: 2px 2px 0px #000, inset 2px 2px 0px #0a0a1a, inset -2px -2px 0px #4a4a6a;
-            transform: translate(2px, 2px);
-        }
-
-
-
-
-        .btn svg {
+            width: 144px;
+            height: 144px;
+            top: 12px;
+            left: 12px;
+            background: #0d0d1a;
+            outline: 4px solid #000;
+            box-shadow: 4px 4px 0 #000, inset 2px 2px 0 #2a2a4a, inset -2px -2px 0 #05050f;
+            /* pixel octagon via clip-path */
+            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
             image-rendering: pixelated;
         }
 
-
-
-
-        #btn-up {
-            top: 0;
-            left: 63px;
+        /* Directional tick marks on the base */
+        #joystick-base::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            background:
+                linear-gradient(#3a3a6a 0 0) center 6px / 4px 12px no-repeat,
+                linear-gradient(#3a3a6a 0 0) center bottom 6px / 4px 12px no-repeat,
+                linear-gradient(#3a3a6a 0 0) 6px center / 12px 4px no-repeat,
+                linear-gradient(#3a3a6a 0 0) right 6px center / 12px 4px no-repeat;
+            image-rendering: pixelated;
         }
 
-        #btn-down {
-            bottom: 0;
-            left: 63px;
+        #joystick-knob {
+            position: absolute;
+            width: 56px;
+            height: 56px;
+            background: #2a2a50;
+            outline: 4px solid #000;
+            box-shadow: 3px 3px 0 #000, inset 2px 2px 0 #6a6aaa, inset -2px -2px 0 #0d0d2a;
+            clip-path: polygon(15% 0%, 85% 0%, 100% 15%, 100% 85%, 85% 100%, 15% 100%, 0% 85%, 0% 15%);
+            top: 56px;
+            left: 56px;
+            image-rendering: pixelated;
+            transition: none;
         }
 
-        #btn-left {
-            top: 63px;
-            left: 0;
-        }
-
-        #btn-right {
-            top: 63px;
-            right: 0;
-        }
-
-
-
-
-        /* Action Buttons */
+        /* ---- PIXEL ART ACTION BUTTONS ---- */
         .actions {
             position: relative;
-            width: 120px;
-            height: 160px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 200px;
+            height: 168px;
+            pointer-events: all;
+            image-rendering: pixelated;
         }
 
-
-
+        /* Shared pixel button base */
+        .px-btn {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            image-rendering: pixelated;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+            border: none;
+            outline: none;
+        }
 
         #btn-attack {
             width: 96px;
             height: 96px;
-            border-radius: 0;
+            right: 0;
+            bottom: 0;
             background: #3d0000;
-            border: none;
-            outline: 2px solid #000;
-            box-shadow: 4px 4px 0px #000, inset 2px 2px 0px #992222, inset -2px -2px 0px #1a0000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            image-rendering: pixelated;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
+            outline: 4px solid #000;
+            box-shadow: 4px 4px 0 #000, inset 2px 2px 0 #992222, inset -2px -2px 0 #1a0000;
+            /* pixel octagon */
+            clip-path: polygon(16% 0%, 84% 0%, 100% 16%, 100% 84%, 84% 100%, 16% 100%, 0% 84%, 0% 16%);
+        }
+
+        #btn-attack:active,
+        #btn-attack.pressed {
+            box-shadow: 2px 2px 0 #000, inset 2px 2px 0 #1a0000, inset -2px -2px 0 #992222;
+            transform: translate(2px, 2px);
+        }
+
+        #btn-orb {
+            width: 64px;
+            height: 64px;
+            right: 102px;
+            bottom: 16px;
+            background: #220044;
+            outline: 4px solid #000;
+            box-shadow: 3px 3px 0 #000, inset 2px 2px 0 #7a22aa, inset -2px -2px 0 #0d0022;
+            clip-path: polygon(16% 0%, 84% 0%, 100% 16%, 100% 84%, 84% 100%, 16% 100%, 0% 84%, 0% 16%);
+        }
+
+        #btn-orb:active {
+            box-shadow: 1px 1px 0 #000, inset 2px 2px 0 #0d0022, inset -2px -2px 0 #7a22aa;
+            transform: translate(2px, 2px);
+        }
+
+        /* Weapon slot button */
+        #btn-swap {
+            width: 58px;
+            height: 58px;
+            right: 102px;
+            bottom: 88px;
+            background: #1a2a0a;
+            outline: 4px solid #000;
+            box-shadow: 3px 3px 0 #000, inset 2px 2px 0 #4a7a22, inset -2px -2px 0 #0a1400;
+            clip-path: polygon(16% 0%, 84% 0%, 100% 16%, 100% 84%, 84% 100%, 16% 100%, 0% 84%, 0% 16%);
+        }
+
+        #btn-swap:active {
+            box-shadow: 1px 1px 0 #000, inset 2px 2px 0 #0a1400, inset -2px -2px 0 #4a7a22;
+            transform: translate(2px, 2px);
         }
 
 
 
 
-        #btn-attack:active {
-            box-shadow: 2px 2px 0px #000, inset 2px 2px 0px #1a0000, inset -2px -2px 0px #992222;
-            transform: translate(2px, 2px);
+        #orb-count-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #f1c40f;
+            outline: 2px solid #000;
+            font-size: 11px;
+            color: #000;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+
+        /* Weapon slot HUD panel (bottom-centre) */
+        #weapon-hud {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 25;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+
+        #weapon-slot-box {
+            width: 52px;
+            height: 52px;
+            background: #0d0d1a;
+            outline: 4px solid #000;
+            box-shadow: 3px 3px 0 #000, inset 2px 2px 0 #3a3a5a, inset -2px -2px 0 #05050f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            image-rendering: pixelated;
+        }
+
+        #weapon-slot-box canvas {
+            width: 36px;
+            height: 36px;
+            image-rendering: pixelated;
+            box-shadow: none;
+            background: transparent;
+        }
+
+        #weapon-name-tag {
+            font-size: 9px;
+            font-family: 'Courier New', monospace;
+            color: #aaaacc;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* Weapon pickup notification */
+        #weapon-notify {
+            position: absolute;
+            top: 44px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            pointer-events: none;
+            display: none;
+            background: #0d0d1a;
+            outline: 3px solid #000;
+            box-shadow: 3px 3px 0 #000;
+            padding: 5px 10px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        #weapon-notify.visible {
+            display: block;
+        }
+
+        /* Hammer shockwave on floor */
+        .crack-overlay {
+            position: absolute;
+            pointer-events: none;
+            image-rendering: pixelated;
+        }
+
+
+
+
+        /* Combo display */
+        #combo-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 15;
+            font-family: 'Courier New', monospace;
+            font-size: 0px;
+            display: none;
+        }
+
+
+
+
+        #combo-display.visible {
+            display: block;
+        }
+
+
+
+
+        #combo-text {
+            font-size: 22px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 0 0 12px #f1c40f;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+
+
+
+
+        /* Room transition flash */
+        #room-flash {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.08s ease-out;
         }
 
         #game-over {
@@ -435,63 +609,73 @@
         <canvas id="gameCanvas" width="640" height="480"></canvas>
     </div>
 
-    <!-- On-screen iPad Touch Controls -->
-    <div id="controls">
-        <div class="dpad">
-            <div class="btn" id="btn-up">
-                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="3" y="1" width="1" height="1" fill="#fff" />
-                    <rect x="2" y="2" width="3" height="1" fill="#fff" />
-                    <rect x="1" y="3" width="5" height="1" fill="#fff" />
-                    <rect x="2" y="4" width="1" height="1" fill="#aaa" />
-                    <rect x="4" y="4" width="1" height="1" fill="#aaa" />
-                </svg>
-            </div>
-            <div class="btn" id="btn-left">
-                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="3" width="1" height="1" fill="#fff" />
-                    <rect x="2" y="2" width="1" height="3" fill="#fff" />
-                    <rect x="3" y="1" width="1" height="5" fill="#fff" />
-                    <rect x="4" y="2" width="1" height="1" fill="#aaa" />
-                    <rect x="4" y="4" width="1" height="1" fill="#aaa" />
-                </svg>
-            </div>
-            <div class="btn" id="btn-right">
-                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="5" y="3" width="1" height="1" fill="#fff" />
-                    <rect x="4" y="2" width="1" height="3" fill="#fff" />
-                    <rect x="3" y="1" width="1" height="5" fill="#fff" />
-                    <rect x="2" y="2" width="1" height="1" fill="#aaa" />
-                    <rect x="2" y="4" width="1" height="1" fill="#aaa" />
-                </svg>
-            </div>
-            <div class="btn" id="btn-down">
-                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="3" y="5" width="1" height="1" fill="#fff" />
-                    <rect x="2" y="4" width="3" height="1" fill="#fff" />
-                    <rect x="1" y="3" width="5" height="1" fill="#fff" />
-                    <rect x="2" y="2" width="1" height="1" fill="#aaa" />
-                    <rect x="4" y="2" width="1" height="1" fill="#aaa" />
-                </svg>
-            </div>
+    <!-- Room transition flash overlay -->
+    <div id="room-flash"></div>
+
+    <!-- Combo display -->
+    <div id="combo-display"><span id="combo-text"></span></div>
+
+    <!-- Weapon HUD (bottom-centre) -->
+    <div id="weapon-hud">
+        <div id="weapon-slot-box">
+            <canvas id="weapon-slot-canvas" width="32" height="32"></canvas>
         </div>
+        <span id="weapon-name-tag">FISTS</span>
+    </div>
+
+    <!-- Weapon pickup notification -->
+    <div id="weapon-notify"></div>
+
+    <!-- On-screen Touch Controls: Virtual Joystick + Action Buttons -->
+    <div id="controls">
+        <!-- Left: Virtual Joystick -->
+        <div id="joystick-zone">
+            <div id="joystick-base"></div>
+            <div id="joystick-knob"></div>
+        </div>
+
+        <!-- Right: Attack + Orb + Swap buttons -->
         <div class="actions">
-            <div id="btn-attack">
-                <svg width="44" height="44" viewBox="0 0 11 11" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Blade -->
+            <!-- Orb fire button -->
+            <div id="btn-orb" class="px-btn">
+                <svg width="28" height="28" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="0" width="2" height="1" fill="#d2b4de" />
+                    <rect x="1" y="1" width="6" height="1" fill="#9b59b6" />
+                    <rect x="0" y="2" width="8" height="1" fill="#9b59b6" />
+                    <rect x="3" y="3" width="2" height="1" fill="#d2b4de" />
+                    <rect x="0" y="3" width="3" height="1" fill="#9b59b6" />
+                    <rect x="5" y="3" width="3" height="1" fill="#9b59b6" />
+                    <rect x="0" y="4" width="8" height="1" fill="#9b59b6" />
+                    <rect x="1" y="5" width="6" height="1" fill="#9b59b6" />
+                    <rect x="3" y="6" width="2" height="1" fill="#d2b4de" />
+                </svg>
+                <div id="orb-count-badge">0</div>
+            </div>
+            <!-- Weapon swap button -->
+            <div id="btn-swap" class="px-btn">
+                <svg width="26" height="26" viewBox="0 0 8 8" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Two arrows cycling = swap -->
+                    <rect x="0" y="1" width="5" height="1" fill="#2ecc71" />
+                    <rect x="4" y="0" width="1" height="3" fill="#2ecc71" />
+                    <rect x="7" y="5" width="1" height="1" fill="#2ecc71" />
+                    <rect x="3" y="6" width="5" height="1" fill="#2ecc71" />
+                    <rect x="3" y="5" width="1" height="3" fill="#2ecc71" />
+                    <rect x="0" y="2" width="1" height="1" fill="#2ecc71" />
+                </svg>
+            </div>
+            <!-- Main attack button -->
+            <div id="btn-attack" class="px-btn">
+                <svg id="attack-btn-icon" width="44" height="44" viewBox="0 0 11 11" xmlns="http://www.w3.org/2000/svg">
                     <rect x="5" y="1" width="1" height="1" fill="#e0e0e0" />
                     <rect x="4" y="2" width="3" height="1" fill="#bdc3c7" />
                     <rect x="5" y="3" width="1" height="1" fill="#bdc3c7" />
                     <rect x="5" y="4" width="1" height="1" fill="#bdc3c7" />
-                    <!-- Guard -->
                     <rect x="3" y="5" width="5" height="1" fill="#f1c40f" />
                     <rect x="3" y="6" width="1" height="1" fill="#d4ac0d" />
                     <rect x="7" y="6" width="1" height="1" fill="#d4ac0d" />
-                    <!-- Hilt -->
                     <rect x="5" y="6" width="1" height="1" fill="#d35400" />
                     <rect x="5" y="7" width="1" height="1" fill="#d35400" />
                     <rect x="5" y="8" width="1" height="1" fill="#a04000" />
-                    <!-- Pommel -->
                     <rect x="4" y="9" width="3" height="1" fill="#d35400" />
                 </svg>
             </div>
@@ -751,6 +935,77 @@ const GRIDS = {
         [1,20,20,20,22,20,20,1],
         [1,1,1,1,1,1,1,1],
         [1,20,22,20,20,22,20,1]
+    ],
+        weaponDagger: [    // Fast, low damage
+        [0,0,0,0,0,1,1,0],
+        [0,0,0,0,1,14,14,1],
+        [0,0,0,1,14,14,1,0],
+        [0,0,1,14,7,1,0,0],
+        [0,1,14,1,0,0,0,0],
+        [1,7,1,0,0,0,0,0],
+        [1,13,1,0,0,0,0,0],
+        [0,1,0,0,0,0,0,0]
+    ],
+    weaponHammer: [    // Legendary - area slam
+        [0,1,1,1,1,1,1,0],
+        [1,7,7,7,7,7,7,1],
+        [1,7,1,7,7,1,7,1],
+        [1,7,7,7,7,7,7,1],
+        [0,1,1,1,1,1,1,0],
+        [0,0,0,1,13,1,0,0],
+        [0,0,0,1,13,1,0,0],
+        [0,0,0,1,1,1,0,0]
+    ],
+    weaponSpear: [    // Long range
+        [0,0,0,0,0,0,1,0],
+        [0,0,0,0,0,1,14,1],
+        [0,0,0,0,1,14,1,0],
+        [0,0,0,1,13,1,0,0],
+        [0,0,1,13,1,0,0,0],
+        [0,1,13,1,0,0,0,0],
+        [1,13,1,0,0,0,0,0],
+        [1,1,0,0,0,0,0,0]
+    ],
+    weaponAxe: [      // High damage
+        [0,0,1,1,1,1,0,0],
+        [0,1,14,14,14,14,1,0],
+        [1,14,1,14,14,1,14,1],
+        [1,14,14,14,14,14,14,1],
+        [0,1,14,1,1,14,1,0],
+        [0,0,1,13,13,1,0,0],
+        [0,0,1,13,13,1,0,0],
+        [0,0,0,1,1,0,0,0]
+    ],
+    weaponStaff: [    // Magic staff - fires 3 orbs
+        [0,0,0,0,0,1,16,1],
+        [0,0,0,0,1,16,17,1],
+        [0,0,0,1,16,1,0,0],
+        [0,0,1,13,1,0,0,0],
+        [0,1,13,1,0,0,0,0],
+        [1,13,13,1,0,0,0,0],
+        [1,13,1,0,0,0,0,0],
+        [0,1,0,0,0,0,0,0]
+    ],
+    weaponWhip: [     // Wide arc, chains
+        [0,0,0,0,0,1,13,0],
+        [0,0,0,0,1,13,1,0],
+        [0,0,0,1,13,1,0,0],
+        [0,0,1,13,1,0,0,0],
+        [0,1,13,7,1,0,0,0],
+        [1,7,1,0,0,0,0,0],
+        [1,13,1,0,0,0,0,0],
+        [0,1,0,0,0,0,0,0]
+    ],
+    // Floor crack left by hammer slam
+    floorCrack: [
+        [0,0,0,1,0,0,0,0],
+        [0,0,1,11,1,0,0,0],
+        [0,1,11,0,11,1,0,0],
+        [1,11,0,0,0,11,1,0],
+        [0,1,11,0,11,1,0,0],
+        [0,0,1,11,11,1,0,0],
+        [0,0,0,1,11,1,0,0],
+        [0,0,0,0,1,0,0,0]
     ]
 };
 
@@ -1080,7 +1335,21 @@ const VFX = {
  * 3. GAME STATE & ENTITIES
  * ---------------------------------------------------------
  */
-const Input = { up: false, down: false, left: false, right: false, attack: false };
+const Input = { up: false, down: false, left: false, right: false, attack: false, orb: false, swap: false };
+
+// Combo system
+let comboCount = 0;
+let comboTimer = 0;
+const COMBO_DECAY = 120; // frames before combo resets
+
+// Orb projectile list
+let orbs = [];
+
+// Lava hazard timer
+let lavaTimer = 0;
+
+// Room transition state
+let roomTransitioning = false;
 
 // Item rarity tiers: common, uncommon, rare, legendary
 const RARITY = {
@@ -1089,6 +1358,80 @@ const RARITY = {
     rare:      { color: '#3498db', glowColor: '#3498db', label: 'RARE'      },
     legendary: { color: '#f39c12', glowColor: '#f39c12', label: 'LEGENDARY' }
 };
+
+// ---- WEAPON DEFINITIONS ----
+const WEAPONS = {
+    fists: {
+        name: 'FISTS',       rarity: 'common',
+        dmgMult: 1.0,        cooldown: 20,
+        range: 40,           knockback: 20,
+        aoe: false,          texture: null,
+        attackColor: '#ffe870',
+        special: null
+    },
+    dagger: {
+        name: 'DAGGER',      rarity: 'common',
+        dmgMult: 0.7,        cooldown: 10,   // very fast
+        range: 32,           knockback: 10,
+        aoe: false,          texture: 'weaponDagger',
+        attackColor: '#cce5ff',
+        special: null
+    },
+    sword: {
+        name: 'SWORD',       rarity: 'uncommon',
+        dmgMult: 1.2,        cooldown: 18,
+        range: 44,           knockback: 22,
+        aoe: false,          texture: 'itemSword',
+        attackColor: '#ffe870',
+        special: null
+    },
+    axe: {
+        name: 'WAR AXE',     rarity: 'rare',
+        dmgMult: 2.0,        cooldown: 30,   // slow but heavy
+        range: 40,           knockback: 35,
+        aoe: false,          texture: 'weaponAxe',
+        attackColor: '#e74c3c',
+        special: null
+    },
+    spear: {
+        name: 'SPEAR',       rarity: 'rare',
+        dmgMult: 1.4,        cooldown: 22,
+        range: 72,           knockback: 28,  // long reach
+        aoe: false,          texture: 'weaponSpear',
+        attackColor: '#cce5ff',
+        special: null
+    },
+    whip: {
+        name: 'CHAIN WHIP',  rarity: 'rare',
+        dmgMult: 0.9,        cooldown: 16,
+        range: 60,           knockback: 15,
+        aoe: 'arc',          texture: 'weaponWhip', // wide 180° arc
+        attackColor: '#d4ac0d',
+        special: null
+    },
+    staff: {
+        name: 'MAGIC STAFF', rarity: 'legendary',
+        dmgMult: 1.5,        cooldown: 28,
+        range: 40,           knockback: 12,
+        aoe: false,          texture: 'weaponStaff',
+        attackColor: '#9b59b6',
+        special: 'trishot'   // fires 3 orbs in a spread
+    },
+    hammer: {
+        name: 'TITAN HAMMER', rarity: 'legendary',
+        dmgMult: 3.5,         cooldown: 50, // slowest
+        range: 48,            knockback: 60,
+        aoe: 'ground',        texture: 'weaponHammer',
+        attackColor: '#f39c12',
+        special: 'groundslam' // area crack + shockwave
+    }
+};
+
+// Weapons that can drop from chests/enemies (not fists)
+const WEAPON_DROP_POOL = ['dagger','sword','axe','spear','whip','staff','hammer'];
+
+// Active floor cracks (from hammer)
+let floorCracks = [];
 
 // Roll a rarity based on room depth
 function rollRarity() {
@@ -1112,20 +1455,34 @@ let screenShake = 0;
 
 class Player {
     constructor() {
-        this.width = TILE_SIZE - 4; // slight bounding box reduction
+        this.width = TILE_SIZE - 4;
         this.height = TILE_SIZE - 4;
         this.x = CANVAS_WIDTH / 2 - this.width / 2;
         this.y = CANVAS_HEIGHT / 2 - this.height / 2;
-        
+
         this.maxHp = 100;
         this.hp = 100;
         this.speed = 4.0;
         this.dmg = 20;
-        
-        this.dir = { x: 1, y: 0 }; // Used for attack direction
+
+        this.dir = { x: 1, y: 0 };
         this.isAttacking = false;
         this.attackTimer = 0;
         this.iFrames = 0;
+
+        // Weapon slot
+        this.equippedWeapon = 'fists';
+        this.weaponInventory = ['fists']; // collected weapons
+        this.weaponInvIndex = 0;
+
+        // Weapon swing animation
+        this.swingAngle = 0;
+        this.swingActive = false;
+        this.swingTimer = 0;
+
+        // Magic orbs
+        this.magicOrbs = 0;
+        this.orbCooldown = 0;
     }
 
     update() {
@@ -1171,15 +1528,51 @@ class Player {
         this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
 
         // Attack Logic
+        const wepCooldown = WEAPONS[this.equippedWeapon].cooldown;
         if (Input.attack && this.attackTimer === 0) {
             this.isAttacking = true;
-            this.attackTimer = 20; // Attack cooldown
+            this.attackTimer = wepCooldown;
             this.processAttack();
         }
 
         if (this.attackTimer > 0) {
             this.attackTimer--;
-            if (this.attackTimer < 10) this.isAttacking = false;
+            if (this.attackTimer < wepCooldown * 0.5) this.isAttacking = false;
+        }
+
+        // Weapon swap
+        if (Input.swap && !this._swapHeld) {
+            this._swapHeld = true;
+            this.cycleWeapon();
+        }
+        if (!Input.swap) this._swapHeld = false;
+
+        // Orb fire logic
+        if (Input.orb && (this.magicOrbs || 0) > 0 && (this.orbCooldown || 0) === 0) {
+            this.magicOrbs--;
+            this.orbCooldown = 18;
+            orbs.push({
+                x: this.x + this.width / 2,
+                y: this.y + this.height / 2,
+                vx: this.dir.x * 6,
+                vy: this.dir.y * 6,
+                life: 60, maxLife: 60,
+                dmg: this.dmg * 2,
+                pulse: 0
+            });
+            VFX.spawnDust(this.x + this.width/2, this.y + this.height/2, 8, '#9b59b6');
+            updateOrbBadge();
+        }
+        if ((this.orbCooldown || 0) > 0) this.orbCooldown--;
+
+        // Combo decay
+        if (comboTimer > 0) {
+            comboTimer--;
+            if (comboTimer === 0) {
+                comboCount = 0;
+                const disp = document.getElementById('combo-display');
+                disp.classList.remove('visible');
+            }
         }
 
         // Check Door Transitions
@@ -1215,17 +1608,120 @@ class Player {
     }
 
     processAttack() {
-        // Create hitbox in front of player
-        const range = 40;
-        let hx = this.x + this.width/2 + (this.dir.x * range) - 20;
-        let hy = this.y + this.height/2 + (this.dir.y * range) - 20;
-        let hw = 40;
-        let hh = 40;
+        const wep = WEAPONS[this.equippedWeapon];
+        const range    = wep.range;
+        const dmgDealt = Math.round(this.dmg * wep.dmgMult);
+        const knockAmt = wep.knockback;
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
 
-        // Slash VFX
+        // Start swing animation
+        this.swingActive = true;
+        this.swingTimer  = wep.cooldown;
+
+        // ---- SPECIAL: Ground Slam (Hammer) ----
+        if (wep.special === 'groundslam') {
+            screenShake = 18;
+            if (navigator.vibrate) navigator.vibrate([30, 10, 30]);
+            // Big shockwave ring
+            VFX.spawnDeathFlash(cx, cy, '#f39c12');
+            VFX.spawnDeathFlash(cx, cy, '#ffffff');
+            VFX.spawnDust(cx, cy, 24, '#f39c12');
+            VFX.spawnDust(cx, cy, 12, '#ffffff');
+            // Floor crack decal
+            floorCracks.push({ x: cx - 16, y: cy - 16, life: 300, maxLife: 300 });
+            // AOE damage all enemies in radius
+            const slamR = 96;
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const ex = e.x + e.width/2, ey = e.y + e.height/2;
+                const d  = Math.sqrt((ex-cx)**2 + (ey-cy)**2);
+                if (d < slamR) {
+                    const falloff = 1 - d / slamR;
+                    e.hp -= dmgDealt * falloff;
+                    e.hitFlash = 10;
+                    e.squishX = 0.5; e.squishY = 1.5;
+                    const kx = (ex-cx)/Math.max(d,1), ky = (ey-cy)/Math.max(d,1);
+                    e.x += kx * knockAmt * falloff;
+                    e.y += ky * knockAmt * falloff;
+                    VFX.spawnDamageNumber(ex, e.y, Math.round(dmgDealt * falloff), '#f39c12');
+                    if (e.hp <= 0) {
+                        VFX.spawnDeathChunks(e.x, e.y, e.width, e.height, e.tex);
+                        VFX.spawnDeathFlash(ex, ey, '#f39c12');
+                        score += e.maxHp;
+                        rollDrop(e.x, e.y);
+                        enemies.splice(i, 1);
+                        checkRoomClear();
+                        this._registerKill();
+                    }
+                }
+            }
+            return;
+        }
+
+        // ---- SPECIAL: Trishot (Staff) ----
+        if (wep.special === 'trishot') {
+            const baseAngle = Math.atan2(this.dir.y, this.dir.x);
+            for (let s = -1; s <= 1; s++) {
+                const a = baseAngle + s * 0.3;
+                orbs.push({
+                    x: cx, y: cy,
+                    vx: Math.cos(a) * 7, vy: Math.sin(a) * 7,
+                    life: 70, maxLife: 70,
+                    dmg: dmgDealt,
+                    pulse: s * 1.0
+                });
+            }
+            VFX.spawnDust(cx, cy, 10, '#9b59b6');
+            VFX.spawnDeathFlash(cx, cy, '#9b59b6');
+            return;
+        }
+
+        // ---- ARC attack (Whip) ----
+        if (wep.aoe === 'arc') {
+            const baseAngle = Math.atan2(this.dir.y, this.dir.x);
+            VFX.spawnSlash(cx + this.dir.x * 28, cy + this.dir.y * 28, this.dir.x, this.dir.y);
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                const ex = e.x + e.width/2, ey = e.y + e.height/2;
+                const d  = Math.sqrt((ex-cx)**2 + (ey-cy)**2);
+                if (d < range) {
+                    const a = Math.atan2(ey-cy, ex-cx);
+                    let da = a - baseAngle;
+                    // normalise angle
+                    while (da >  Math.PI) da -= 2*Math.PI;
+                    while (da < -Math.PI) da += 2*Math.PI;
+                    if (Math.abs(da) < Math.PI * 0.65) {
+                        e.hp -= dmgDealt;
+                        e.hitFlash = 6;
+                        e.squishX = 0.7; e.squishY = 1.3;
+                        e.x += this.dir.x * knockAmt * 0.5;
+                        e.y += this.dir.y * knockAmt * 0.5;
+                        VFX.spawnDust(ex, ey, 4, '#d4ac0d');
+                        VFX.spawnDamageNumber(ex, e.y, dmgDealt, '#d4ac0d');
+                        if (e.hp <= 0) {
+                            VFX.spawnDeathChunks(e.x, e.y, e.width, e.height, e.tex);
+                            VFX.spawnDeathFlash(ex, ey, '#d4ac0d');
+                            score += e.maxHp;
+                            rollDrop(e.x, e.y);
+                            enemies.splice(i, 1);
+                            checkRoomClear();
+                            this._registerKill();
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        // ---- Standard melee attack ----
+        let hx = cx + this.dir.x * range - 20;
+        let hy = cy + this.dir.y * range - 20;
+        const hw = range * 0.9, hh = range * 0.9;
+
         VFX.spawnSlash(
-            this.x + this.width / 2 + this.dir.x * 28,
-            this.y + this.height / 2 + this.dir.y * 28,
+            cx + this.dir.x * 28,
+            cy + this.dir.y * 28,
             this.dir.x, this.dir.y
         );
 
@@ -1234,34 +1730,68 @@ class Player {
             if (hx < e.x + e.width && hx + hw > e.x &&
                 hy < e.y + e.height && hy + hh > e.y) {
 
-                e.hp -= this.dmg;
-
-                // Knockback
-                e.x += this.dir.x * 20;
-                e.y += this.dir.y * 20;
-
-                // Hit flash + dust + damage number
+                e.hp -= dmgDealt;
+                e.x += this.dir.x * knockAmt;
+                e.y += this.dir.y * knockAmt;
                 e.hitFlash = 6;
-                e.squishX = 0.7;
-                e.squishY = 1.3;
-                VFX.spawnDust(e.x + e.width / 2, e.y + e.height / 2, 5, '#ffffff');
-                VFX.spawnDamageNumber(e.x + e.width / 2, e.y, this.dmg, '#ffe870');
+                e.squishX = 0.7; e.squishY = 1.3;
+                VFX.spawnDust(e.x + e.width/2, e.y + e.height/2, 5, wep.attackColor);
+                VFX.spawnDamageNumber(e.x + e.width/2, e.y, dmgDealt, wep.attackColor);
 
                 if (e.hp <= 0) {
-                    // Death explosion: 6 texture chunks + flash ring
                     VFX.spawnDeathChunks(e.x, e.y, e.width, e.height, e.tex);
-                    VFX.spawnDeathFlash(
-                        e.x + e.width / 2,
-                        e.y + e.height / 2,
-                        e.type === 'slime' ? '#2ecc71' : '#e74c3c'
-                    );
+                    VFX.spawnDeathFlash(e.x + e.width/2, e.y + e.height/2,
+                        e.type === 'slime' ? '#2ecc71' : '#e74c3c');
                     score += e.maxHp;
                     rollDrop(e.x, e.y);
                     enemies.splice(i, 1);
                     checkRoomClear();
+                    this._registerKill();
                 }
             }
         }
+    }
+
+    _registerKill() {
+        comboCount++;
+        comboTimer = COMBO_DECAY;
+        if (comboCount >= 2) {
+            document.getElementById('combo-text').innerText = comboCount + 'x COMBO!';
+            document.getElementById('combo-display').classList.add('visible');
+            score += comboCount * 25;
+            updateUI();
+        }
+    }
+
+    equipWeapon(weaponKey) {
+        const wep = WEAPONS[weaponKey];
+        if (!wep) return;
+        this.equippedWeapon = weaponKey;
+        // Adjust attack cooldown based on weapon
+        this.attackCooldown = wep.cooldown;
+        updateWeaponHUD();
+    }
+
+    cycleWeapon() {
+        this.weaponInvIndex = (this.weaponInvIndex + 1) % this.weaponInventory.length;
+        this.equipWeapon(this.weaponInventory[this.weaponInvIndex]);
+        VFX.spawnDust(this.x + this.width/2, this.y + this.height/2, 6, '#2ecc71');
+        if (navigator.vibrate) navigator.vibrate(12);
+    }
+
+    pickupWeapon(weaponKey) {
+        if (!this.weaponInventory.includes(weaponKey)) {
+            this.weaponInventory.push(weaponKey);
+        }
+        this.weaponInvIndex = this.weaponInventory.indexOf(weaponKey);
+        this.equipWeapon(weaponKey);
+        // Show weapon notification
+        const notify = document.getElementById('weapon-notify');
+        const wep = WEAPONS[weaponKey];
+        notify.innerText = '⚔ ' + wep.name + ' [' + wep.rarity.toUpperCase() + ']';
+        notify.style.color = RARITY[wep.rarity].color;
+        notify.classList.add('visible');
+        setTimeout(() => notify.classList.remove('visible'), 2200);
     }
 
     takeDamage(amt) {
@@ -1293,16 +1823,36 @@ class Player {
 
         ctx.restore();
 
-        // Attack range indicator
+        // Weapon swing arc indicator
         if (this.isAttacking) {
-            const range = 28;
-            const sx = this.x + this.width / 2 + (this.dir.x * range) - 12;
-            const sy = this.y + this.height / 2 + (this.dir.y * range) - 12;
-            const flashAlpha = (this.attackTimer / 10) * 0.35;
+            const wep = WEAPONS[this.equippedWeapon];
+            const range = wep.range;
+            const cx2 = this.x + this.width / 2;
+            const cy2 = this.y + this.height / 2;
+            const flashAlpha = (this.attackTimer / wep.cooldown) * 0.45;
             ctx.save();
             ctx.globalAlpha = flashAlpha;
-            ctx.fillStyle = '#ffe870';
-            ctx.fillRect(Math.round(sx), Math.round(sy), 24, 24);
+            if (wep.aoe === 'arc') {
+                // Wide arc sweep
+                const baseA = Math.atan2(this.dir.y, this.dir.x);
+                ctx.strokeStyle = wep.attackColor;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(cx2, cy2, range * 0.85, baseA - Math.PI * 0.6, baseA + Math.PI * 0.6);
+                ctx.stroke();
+            } else if (wep.aoe === 'ground') {
+                // Circle for hammer AOE
+                ctx.strokeStyle = wep.attackColor;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(cx2, cy2, 96, 0, Math.PI * 2);
+                ctx.stroke();
+            } else {
+                const sx = cx2 + this.dir.x * range - 12;
+                const sy = cy2 + this.dir.y * range - 12;
+                ctx.fillStyle = wep.attackColor;
+                ctx.fillRect(Math.round(sx), Math.round(sy), 24, 24);
+            }
             ctx.restore();
         }
 
@@ -1475,16 +2025,16 @@ class Enemy {
 }
 
 class Item {
-    constructor(x, y, type, rarity) {
+    constructor(x, y, type, rarity, weaponKey) {
         this.x = x;
         this.y = y;
         this.width = TILE_SIZE - 10;
         this.height = TILE_SIZE - 10;
-        this.type = type; // 'heart', 'sword', 'boot'
+        this.type = type;
         this.rarity = rarity || 'common';
+        this.weaponKey = weaponKey || null; // for weapon-type items
         this.bob = Math.random() * Math.PI * 2;
         this.glowPulse = Math.random() * Math.PI * 2;
-        // Legendary/rare items emit ambient particles over time
         this.particleTimer = 0;
     }
 
@@ -1533,7 +2083,9 @@ class Item {
                 // Orb: grant a single magic bolt on next attack
                 player.magicOrbs = (player.magicOrbs || 0) + Math.round(1 * rarityMult);
             } else if (this.type === 'key') {
-                score += 500; // Bonus score for finding a key
+                score += 500;
+            } else if (this.type === 'weapon') {
+                player.pickupWeapon(this.weaponKey);
             }
 
             // Pickup burst fires away from the now-deleted item position
@@ -1550,6 +2102,9 @@ class Item {
         if (this.type === 'sword')   tex = Textures.itemSword;
         if (this.type === 'boot')    tex = Textures.itemBoot;
         if (this.type === 'shield')  tex = Textures.itemShield;
+        if (this.type === 'weapon' && this.weaponKey && Textures[WEAPONS[this.weaponKey].texture]) {
+            tex = Textures[WEAPONS[this.weaponKey].texture];
+        }
         if (this.type === 'orb')     tex = Textures.itemOrb;
         if (this.type === 'key')     tex = Textures.itemKey;
 
@@ -1940,16 +2495,22 @@ function spawnEnemies() {
 }
 
 function rollDrop(x, y) {
-    // 35% chance to drop item
     if (Math.random() < 0.35) {
         const rand = Math.random();
         let type = 'heart';
-        if (rand > 0.55 && rand <= 0.70) type = 'sword';
-        if (rand > 0.70 && rand <= 0.82) type = 'boot';
-        if (rand > 0.82 && rand <= 0.92) type = 'shield';
-        if (rand > 0.92 && rand <= 0.97) type = 'orb';
-        if (rand > 0.97) type = 'key';
-        items.push(new Item(x, y, type));
+        if (rand > 0.50 && rand <= 0.63) type = 'boot';
+        if (rand > 0.63 && rand <= 0.74) type = 'shield';
+        if (rand > 0.74 && rand <= 0.83) type = 'orb';
+        if (rand > 0.83 && rand <= 0.90) type = 'key';
+        if (rand > 0.90) type = 'weapon'; // weapon drop!
+        if (type === 'weapon') {
+            const pool = WEAPON_DROP_POOL.filter(k => WEAPONS[k].rarity !== 'legendary');
+            const wKey = pool[Math.floor(Math.random() * pool.length)];
+            const r = WEAPONS[wKey].rarity;
+            items.push(new Item(x, y, 'weapon', r, wKey));
+        } else {
+            items.push(new Item(x, y, type));
+        }
     }
 }
 
@@ -1964,21 +2525,37 @@ function checkRoomClear() {
 }
 
 function nextRoom(exitTx, exitTy) {
+    if (roomTransitioning) return;
+    roomTransitioning = true;
+
+    // Flash overlay
+    const flash = document.getElementById('room-flash');
+    flash.style.opacity = '1';
+    setTimeout(() => {
+        flash.style.transition = 'opacity 0.35s ease-out';
+        flash.style.opacity = '0';
+        setTimeout(() => { flash.style.transition = ''; roomTransitioning = false; }, 400);
+    }, 80);
+
     currentRoom++;
+    lavaTimer = 0;
+    orbs = [];
+    comboCount = 0;
+    comboTimer = 0;
+    document.getElementById('combo-display').classList.remove('visible');
     generateRoomMap();
     spawnEnemies();
-    
-    // Position player at opposite door
-    if (exitTy === 0) { // Exited top -> Enter bottom
+
+    if (exitTy === 0) {
         player.y = (ROWS - 2) * TILE_SIZE;
         player.x = exitTx * TILE_SIZE;
-    } else if (exitTy === ROWS - 1) { // Exited bottom -> Enter top
+    } else if (exitTy === ROWS - 1) {
         player.y = 1 * TILE_SIZE;
         player.x = exitTx * TILE_SIZE;
-    } else if (exitTx === 0) { // Exited left -> Enter right
+    } else if (exitTx === 0) {
         player.x = (COLS - 2) * TILE_SIZE;
         player.y = exitTy * TILE_SIZE;
-    } else if (exitTx === COLS - 1) { // Exited right -> Enter left
+    } else if (exitTx === COLS - 1) {
         player.x = 1 * TILE_SIZE;
         player.y = exitTy * TILE_SIZE;
     }
@@ -1988,45 +2565,165 @@ function nextRoom(exitTx, exitTy) {
 
 /**
  * ---------------------------------------------------------
- * 5. CONTROLS (iPad Touch & Keyboard)
+ * 5. CONTROLS (Virtual Joystick + Keyboard)
  * ---------------------------------------------------------
  */
-// Keyboard for testing
+
+// ---- Keyboard (desktop) ----
 window.addEventListener('keydown', (e) => {
-    if (e.key === 'w' || e.key === 'ArrowUp') Input.up = true;
-    if (e.key === 's' || e.key === 'ArrowDown') Input.down = true;
-    if (e.key === 'a' || e.key === 'ArrowLeft') Input.left = true;
+    if (e.key === 'w' || e.key === 'ArrowUp')    Input.up    = true;
+    if (e.key === 's' || e.key === 'ArrowDown')  Input.down  = true;
+    if (e.key === 'a' || e.key === 'ArrowLeft')  Input.left  = true;
     if (e.key === 'd' || e.key === 'ArrowRight') Input.right = true;
     if (e.key === ' ' || e.key === 'Enter') Input.attack = true;
+    if (e.key === 'q') Input.orb = true;
+    if (e.key === 'e' || e.key === 'Tab') { Input.swap = true; e.preventDefault(); }
 });
 window.addEventListener('keyup', (e) => {
-    if (e.key === 'w' || e.key === 'ArrowUp') Input.up = false;
-    if (e.key === 's' || e.key === 'ArrowDown') Input.down = false;
-    if (e.key === 'a' || e.key === 'ArrowLeft') Input.left = false;
+    if (e.key === 'w' || e.key === 'ArrowUp')    Input.up    = false;
+    if (e.key === 's' || e.key === 'ArrowDown')  Input.down  = false;
+    if (e.key === 'a' || e.key === 'ArrowLeft')  Input.left  = false;
     if (e.key === 'd' || e.key === 'ArrowRight') Input.right = false;
     if (e.key === ' ' || e.key === 'Enter') Input.attack = false;
+    if (e.key === 'q') Input.orb = false;
+    if (e.key === 'e' || e.key === 'Tab') Input.swap = false;
 });
 
-// Touch controls for iPad
-function bindTouch(btnId, keyName) {
-    const btn = document.getElementById(btnId);
-    
-    const press = (e) => { e.preventDefault(); Input[keyName] = true; };
-    const release = (e) => { e.preventDefault(); Input[keyName] = false; };
+// ---- Virtual Joystick ----
+(function setupJoystick() {
+    const zone  = document.getElementById('joystick-zone');
+    const base  = document.getElementById('joystick-base');
+    const knob  = document.getElementById('joystick-knob');
 
-    // Support both Touch (iPad) and Mouse (PC clicking the UI)
-    btn.addEventListener('touchstart', press, {passive: false});
-    btn.addEventListener('touchend', release, {passive: false});
-    btn.addEventListener('mousedown', press);
-    btn.addEventListener('mouseup', release);
+    const DEAD   = 10;   // dead-zone radius px
+    const MAX_R  = 55;   // max knob travel radius px
+
+    let activeTouchId = null;
+    let baseX = 0, baseY = 0;  // base centre in page coords
+
+    function getBaseCenter() {
+        const r = base.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+
+    function applyJoystick(dx, dy) {
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        // Move knob visually (clamped)
+        const clamp = Math.min(dist, MAX_R);
+        const nx = dist > 0 ? (dx / dist) * clamp : 0;
+        const ny = dist > 0 ? (dy / dist) * clamp : 0;
+        knob.style.transform = `translate(${nx}px, ${ny}px)`;
+
+        // Update Input flags from joystick angle
+        if (dist > DEAD) {
+            const normX = dx / dist;
+            const normY = dy / dist;
+            Input.up    = normY < -0.35;
+            Input.down  = normY >  0.35;
+            Input.left  = normX < -0.35;
+            Input.right = normX >  0.35;
+        } else {
+            Input.up = Input.down = Input.left = Input.right = false;
+        }
+    }
+
+    function resetJoystick() {
+        knob.style.transform = 'translate(0px, 0px)';
+        Input.up = Input.down = Input.left = Input.right = false;
+        activeTouchId = null;
+    }
+
+    zone.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (activeTouchId !== null) return;
+        const t = e.changedTouches[0];
+        activeTouchId = t.identifier;
+        const c = getBaseCenter();
+        baseX = c.x; baseY = c.y;
+        applyJoystick(t.clientX - baseX, t.clientY - baseY);
+        if (navigator.vibrate) navigator.vibrate(6);
+    }, { passive: false });
+
+    zone.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+            if (t.identifier === activeTouchId) {
+                applyJoystick(t.clientX - baseX, t.clientY - baseY);
+            }
+        }
+    }, { passive: false });
+
+    zone.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+            if (t.identifier === activeTouchId) resetJoystick();
+        }
+    }, { passive: false });
+
+    zone.addEventListener('touchcancel', resetJoystick, { passive: false });
+
+    // Mouse fallback for desktop testing
+    let mouseDown = false;
+    zone.addEventListener('mousedown', (e) => {
+        mouseDown = true;
+        const c = getBaseCenter();
+        baseX = c.x; baseY = c.y;
+        applyJoystick(e.clientX - baseX, e.clientY - baseY);
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (!mouseDown) return;
+        applyJoystick(e.clientX - baseX, e.clientY - baseY);
+    });
+    window.addEventListener('mouseup', () => { if (mouseDown) { mouseDown = false; resetJoystick(); } });
+})();
+
+// ---- Attack button ----
+(function setupAttackBtn() {
+    const btn = document.getElementById('btn-attack');
+    const press   = (e) => { e.preventDefault(); Input.attack = true;  btn.classList.add('pressed');    if (navigator.vibrate) navigator.vibrate(8); };
+    const release = (e) => { e.preventDefault(); Input.attack = false; btn.classList.remove('pressed'); };
+    btn.addEventListener('touchstart',  press,   { passive: false });
+    btn.addEventListener('touchend',    release, { passive: false });
+    btn.addEventListener('touchcancel', release, { passive: false });
+    btn.addEventListener('mousedown',  press);
+    btn.addEventListener('mouseup',    release);
     btn.addEventListener('mouseleave', release);
+})();
+
+// ---- Orb button ----
+(function setupOrbBtn() {
+    const btn = document.getElementById('btn-orb');
+    const press   = (e) => { e.preventDefault(); Input.orb = true;  };
+    const release = (e) => { e.preventDefault(); Input.orb = false; };
+    btn.addEventListener('touchstart',  press,   { passive: false });
+    btn.addEventListener('touchend',    release, { passive: false });
+    btn.addEventListener('touchcancel', release, { passive: false });
+    btn.addEventListener('mousedown',  press);
+    btn.addEventListener('mouseup',    release);
+    btn.addEventListener('mouseleave', release);
+})();
+
+function updateOrbBadge() {
+    const badge = document.getElementById('orb-count-badge');
+    const btn   = document.getElementById('btn-orb');
+    const count = player.magicOrbs || 0;
+    badge.innerText = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+    btn.style.opacity = count > 0 ? '1' : '0.35';
 }
 
-bindTouch('btn-up', 'up');
-bindTouch('btn-down', 'down');
-bindTouch('btn-left', 'left');
-bindTouch('btn-right', 'right');
-bindTouch('btn-attack', 'attack');
+// ---- Weapon swap button ----
+(function setupSwapBtn() {
+    const btn = document.getElementById('btn-swap');
+    const press   = (e) => { e.preventDefault(); Input.swap = true;  };
+    const release = (e) => { e.preventDefault(); Input.swap = false; };
+    btn.addEventListener('touchstart',  press,   { passive: false });
+    btn.addEventListener('touchend',    release, { passive: false });
+    btn.addEventListener('touchcancel', release, { passive: false });
+    btn.addEventListener('mousedown',  press);
+    btn.addEventListener('mouseup',    release);
+    btn.addEventListener('mouseleave', release);
+})();
 
 
 /**
@@ -2047,11 +2744,33 @@ function updateUI() {
     document.getElementById('ui-room').innerText = roomLabel;
     document.getElementById('ui-score').innerText = score;
 
-    // Update pixel HP bar
     const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
     const bar = document.getElementById('ui-hp-bar');
     bar.style.width = pct + '%';
     bar.className = 'hp-bar-inner ' + (pct > 60 ? 'high' : pct > 30 ? 'mid' : 'low');
+}
+
+function updateWeaponHUD() {
+    const wep = WEAPONS[player.equippedWeapon];
+    document.getElementById('weapon-name-tag').innerText = wep.name;
+    // Draw weapon texture onto the slot canvas
+    const slotCanvas = document.getElementById('weapon-slot-canvas');
+    const sCtx = slotCanvas.getContext('2d');
+    sCtx.imageSmoothingEnabled = false;
+    sCtx.clearRect(0, 0, 32, 32);
+    if (wep.texture && Textures[wep.texture]) {
+        sCtx.drawImage(Textures[wep.texture], 0, 0, 32, 32);
+    } else {
+        // Fists: draw a small pixel fist
+        sCtx.fillStyle = '#ffccaa';
+        sCtx.fillRect(8,8,16,16);
+        sCtx.fillStyle = '#000';
+        sCtx.fillRect(6,6,20,2);
+        sCtx.fillRect(6,24,20,2);
+    }
+    // Colour the attack button SVG to match weapon rarity
+    document.getElementById('btn-attack').style.boxShadow =
+        '4px 4px 0 #000, inset 2px 2px 0 ' + (RARITY[wep.rarity].glowColor || '#992222') + ', inset -2px -2px 0 #1a0000';
 }
 
 function gameOver() {
@@ -2123,7 +2842,53 @@ function loop() {
     // Update Phase
     player.update();
     enemies.forEach(e => e.update());
-    
+
+    // Update orb projectiles
+    orbs = orbs.filter(o => {
+        o.x += o.vx;
+        o.y += o.vy;
+        o.life--;
+        o.pulse += 0.25;
+
+        // Wall collision
+        const tx = Math.floor(o.x / TILE_SIZE);
+        const ty = Math.floor(o.y / TILE_SIZE);
+        if (roomMap[ty] && roomMap[ty][tx] === 1) {
+            VFX.spawnDust(o.x, o.y, 6, '#9b59b6');
+            return false;
+        }
+
+        // Enemy collision
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const e = enemies[i];
+            if (o.x > e.x && o.x < e.x + e.width && o.y > e.y && o.y < e.y + e.height) {
+                e.hp -= o.dmg;
+                e.hitFlash = 8;
+                VFX.spawnDamageNumber(e.x + e.width/2, e.y, Math.round(o.dmg), '#9b59b6');
+                VFX.spawnDeathFlash(o.x, o.y, '#9b59b6');
+                if (e.hp <= 0) {
+                    VFX.spawnDeathChunks(e.x, e.y, e.width, e.height, e.tex);
+                    score += e.maxHp;
+                    rollDrop(e.x, e.y);
+                    enemies.splice(i, 1);
+                    checkRoomClear();
+                }
+                return false;
+            }
+        }
+        return o.life > 0;
+    });
+
+    // Lava room: periodic floor damage
+    if (currentRoomType === 'lava') {
+        lavaTimer++;
+        if (lavaTimer >= 90) {
+            lavaTimer = 0;
+            player.takeDamage(5);
+            VFX.spawnDust(player.x + player.width/2, player.y + player.height, 4, '#e74c3c');
+        }
+    }
+
     // Process Items and filter out collected ones
     items = items.filter(i => !i.update());
 
@@ -2147,10 +2912,46 @@ function loop() {
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     drawMap();
+
+    // Draw floor cracks (hammer slam residue)
+    floorCracks = floorCracks.filter(c => { c.life--; return c.life > 0; });
+    floorCracks.forEach(c => {
+        const a = Math.min(1, c.life / 60) * 0.75;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(Textures.floorCrack, Math.round(c.x), Math.round(c.y), 32, 32);
+        // Second larger crack slightly offset
+        ctx.globalAlpha = a * 0.5;
+        ctx.drawImage(Textures.floorCrack, Math.round(c.x - 16), Math.round(c.y - 8), 48, 48);
+        ctx.restore();
+    });
+
     if (chest) chest.draw();
     items.forEach(i => i.draw());
     enemies.forEach(e => e.draw());
     player.draw();
+
+    // Draw orb projectiles
+    orbs.forEach(o => {
+        const a = o.life / o.maxLife;
+        const r = 7 + Math.sin(o.pulse) * 2;
+        ctx.save();
+        ctx.globalAlpha = a;
+        const grad = ctx.createRadialGradient(o.x, o.y, 1, o.x, o.y, r);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, '#d2b4de');
+        grad.addColorStop(1, '#9b59b600');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(o.x, o.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = a * 0.9;
+        ctx.fillStyle = '#9b59b6';
+        ctx.fillRect(Math.round(o.x - 3), Math.round(o.y - 3), 6, 6);
+        ctx.restore();
+    });
+
     VFX.draw();
 
     ctx.restore(); // Undo screen shake translation
@@ -2162,6 +2963,7 @@ function loop() {
 generateRoomMap();
 spawnEnemies();
 updateUI();
+updateWeaponHUD();
 requestAnimationFrame(loop);
 
     </script>
