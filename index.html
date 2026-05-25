@@ -481,26 +481,92 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
+            background: #0a0008;
+            padding: 0;
             text-align: center;
             color: white;
-            border: 4px solid white;
+            /* Chunky pixel border — double inset layered */
+            outline: 4px solid #000;
+            box-shadow:
+                0 0 0 4px #6b0000,
+                0 0 0 8px #000,
+                0 0 0 12px #3a0030,
+                0 0 0 16px #000,
+                8px 8px 0 16px #000;
             z-index: 100;
+            image-rendering: pixelated;
+            min-width: 320px;
         }
 
-        #game-over h1 {
-            margin-top: 0;
-            color: #ff4444;
+        /* Pixel-art title banner at top of panel */
+        #go-banner {
+            display: block;
+            width: 100%;
+            background: #6b0000;
+            padding: 14px 24px 10px;
+            box-sizing: border-box;
+            border-bottom: 4px solid #000;
         }
 
-        #game-over button {
-            padding: 15px 30px;
-            font-size: 20px;
-            font-family: inherit;
-            background: white;
+        #go-banner canvas {
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+        }
+
+        #go-body {
+            padding: 20px 32px 28px;
+        }
+
+        .go-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: #aaaacc;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #1a001a;
+            padding-bottom: 8px;
+        }
+
+        .go-stat-val {
+            color: #f1c40f;
+            font-size: 10px;
+        }
+
+        #go-restart-btn {
+            margin-top: 16px;
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: #000;
+            background: #e74c3c;
             border: none;
+            outline: 4px solid #000;
+            box-shadow: 3px 3px 0 #000, inset 2px 2px 0 #ff7070, inset -2px -2px 0 #6b0000;
             cursor: pointer;
+            image-rendering: pixelated;
+            transition: none;
+        }
+
+        #go-restart-btn:active {
+            box-shadow: 1px 1px 0 #000, inset 2px 2px 0 #6b0000, inset -2px -2px 0 #ff7070;
+            transform: translate(2px, 2px);
+        }
+
+        #go-flavour {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            color: #553344;
+            margin-top: 14px;
+            letter-spacing: 1px;
+            display: block;
         }
 
         @media (min-width: 1024px) {
@@ -678,9 +744,26 @@
     </div>
 
     <div id="game-over">
-        <h1>YOU DIED</h1>
-        <p>Rooms Cleared: <span id="go-rooms">0</span></p>
-        <button onclick="location.reload()">RESTART</button>
+        <div id="go-banner">
+            <!-- Pixel art YOU DIED rendered onto a canvas by JS -->
+            <canvas id="go-title-canvas" width="240" height="40"></canvas>
+        </div>
+        <div id="go-body">
+            <div class="go-stat-row">
+                <span>ROOMS CLEARED</span>
+                <span class="go-stat-val" id="go-rooms">0</span>
+            </div>
+            <div class="go-stat-row">
+                <span>FINAL SCORE</span>
+                <span class="go-stat-val" id="go-score-final">0</span>
+            </div>
+            <div class="go-stat-row">
+                <span>MAX DMG</span>
+                <span class="go-stat-val" id="go-dmg-final">0</span>
+            </div>
+            <button id="go-restart-btn" onclick="location.reload()">▶ PLAY AGAIN</button>
+            <span id="go-flavour">THE DUNGEON CLAIMS ANOTHER SOUL</span>
+        </div>
     </div>
 
     <script>
@@ -1138,68 +1221,102 @@ const VFX = {
         });
     },
 
-    // Spawn dust puff (small square pixel particles)
+    // Spawn dust puff — square pixel particles with fading color steps
     spawnDust(x, y, count, color) {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const spd = 1 + Math.random() * 2.5;
+            const spd = 0.8 + Math.random() * 2.8;
+            const life = 18 + Math.floor(Math.random() * 20);
             this.particles.push({
                 type: 'dust',
-                x: x + (Math.random() - 0.5) * 8,
-                y: y + (Math.random() - 0.5) * 8,
+                x: x + (Math.random() - 0.5) * 10,
+                y: y + (Math.random() - 0.5) * 10,
                 vx: Math.cos(angle) * spd,
                 vy: Math.sin(angle) * spd,
-                life: 20 + Math.floor(Math.random() * 15),
-                maxLife: 35,
-                size: 3 + Math.floor(Math.random() * 3),
-                color: color || '#ffffff'
+                life, maxLife: life,
+                size: 2 + Math.floor(Math.random() * 4),
+                color: color || '#ffffff',
+                // Pixel shadow offset for depth
+                shadow: Math.random() < 0.4
             });
         }
     },
 
-    // Spawn a sword slash arc (directional sweep) with a trailing streak
-    spawnSlash(cx, cy, dirX, dirY) {
-        const perpX = -dirY;
-        const perpY = dirX;
-        const count = 9;
-        for (let i = 0; i < count; i++) {
-            const t = (i / (count - 1)) - 0.5;
-            const ox = dirX * 24 + perpX * t * 34;
-            const oy = dirY * 24 + perpY * t * 34;
-            const spd = 2.5 + Math.abs(t) * 1.5;
+    // Spawn a burst of pixel sparks in a cone (hit impact)
+    spawnSparks(x, y, dirX, dirY, color) {
+        const c = color || '#ffe870';
+        for (let i = 0; i < 7; i++) {
+            const spread = (Math.random() - 0.5) * 2.2;
+            const spd = 1.5 + Math.random() * 3.5;
+            const nx = dirX + spread * Math.abs(dirY || 0.5);
+            const ny = dirY + spread * Math.abs(dirX || 0.5);
+            const len = Math.sqrt(nx*nx + ny*ny) || 1;
             this.particles.push({
-                type: 'slash',
-                x: cx + ox,
-                y: cy + oy,
-                vx: dirX * spd + perpX * t * 1.2,
-                vy: dirY * spd + perpY * t * 1.2,
-                life: 8 + Math.floor((1 - Math.abs(t * 2)) * 6),
-                maxLife: 14,
-                size: Math.round(3 + (1 - Math.abs(t * 2)) * 3),
-                color: i % 3 === 0 ? '#ffe870' : i % 3 === 1 ? '#ffffff' : '#ffaa00'
+                type: 'spark',
+                x, y,
+                vx: (nx/len) * spd,
+                vy: (ny/len) * spd,
+                life: 10 + Math.floor(Math.random() * 10),
+                maxLife: 20,
+                size: 1 + Math.floor(Math.random() * 3),
+                color: c,
+                tail: []
             });
         }
-        // Add a central bright flash pixel
+    },
+
+    // Spawn an impact shockwave — fast-expanding pixelated ring that shrinks
+    spawnImpact(x, y, color) {
         this.particles.push({
-            type: 'slash',
-            x: cx + dirX * 20,
-            y: cy + dirY * 20,
-            vx: dirX * 1, vy: dirY * 1,
-            life: 6, maxLife: 6,
-            size: 6,
-            color: '#ffffff'
+            type: 'impact',
+            x, y,
+            life: 10, maxLife: 10,
+            radius: 4,
+            color: color || '#ffffff'
         });
     },
 
-    // Spawn enemy death explosion: 6 texture chunks that fly outward + fade
+    // Spawn a sword slash arc — sweeping arc trail + pixel sparks
+    spawnSlash(cx, cy, dirX, dirY) {
+        const perpX = -dirY;
+        const perpY = dirX;
+        const count = 12;
+        for (let i = 0; i < count; i++) {
+            const t = (i / (count - 1)) - 0.5;
+            const reach = 28 + Math.abs(t) * 10;
+            const ox = dirX * reach + perpX * t * 40;
+            const oy = dirY * reach + perpY * t * 40;
+            const spd = 1.8 + Math.abs(t) * 2.0;
+            const colors = ['#ffe870', '#ffffff', '#ffcc00', '#fff5aa'];
+            this.particles.push({
+                type: 'slash',
+                x: cx + ox, y: cy + oy,
+                vx: dirX * spd + perpX * t * 1.4,
+                vy: dirY * spd + perpY * t * 1.4,
+                life: 7 + Math.floor((1 - Math.abs(t * 2)) * 9),
+                maxLife: 16,
+                size: Math.round(2 + (1 - Math.abs(t * 2)) * 5),
+                color: colors[i % colors.length]
+            });
+        }
+        // Bright flash core
+        this.particles.push({ type: 'slash', x: cx + dirX * 22, y: cy + dirY * 22, vx: dirX, vy: dirY, life: 7, maxLife: 7, size: 8, color: '#ffffff' });
+        // Pixel sparks fanning out perpendicular
+        this.spawnSparks(cx + dirX * 26, cy + dirY * 26, dirX, dirY, '#ffe870');
+        this.spawnImpact(cx + dirX * 22, cy + dirY * 22, '#ffe870');
+    },
+
+    // Spawn enemy death explosion: texture chunks + sparks + impact ring
     spawnDeathChunks(ex, ey, ew, eh, texture) {
+        this.spawnImpact(ex + ew/2, ey + eh/2, '#ffffff');
+        this.spawnSparks(ex + ew/2, ey + eh/2, 0, -1, '#ffee88');
         const cols = 3, rows = 2;
         const cw = ew / cols;
         const ch = eh / rows;
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
                 const angle = Math.atan2(row - 0.5, col - 1) + (Math.random() - 0.5) * 0.5;
-                const spd = 1.0 + Math.random() * 0.8;
+                const spd = 1.6 + Math.random() * 1.4;
                 const snap = document.createElement('canvas');
                 snap.width = Math.ceil(cw);
                 snap.height = Math.ceil(ch);
@@ -1306,6 +1423,16 @@ const VFX = {
                 p.y += p.vy;
                 p.vx *= 0.88;
                 p.vy *= 0.88;
+            } else if (p.type === 'spark') {
+                if (p.tail) p.tail.push({ x: p.x, y: p.y });
+                if (p.tail && p.tail.length > 4) p.tail.shift();
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.12; // gravity
+                p.vx *= 0.90;
+                p.vy *= 0.90;
+            } else if (p.type === 'impact') {
+                p.radius += 4;
             } else if (p.type === 'dmgnum') {
                 p.y += p.vy;
                 p.vy *= 0.94;
@@ -1343,15 +1470,50 @@ const VFX = {
 
             if (p.type === 'dust') {
                 ctx.fillStyle = p.color;
-                // Pixelated square
                 ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+                // 1px shadow pixel for depth
+                if (p.shadow) {
+                    ctx.globalAlpha = alpha * 0.4;
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(Math.round(p.x) + 2, Math.round(p.y) + 2, p.size, p.size);
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = p.color;
+                }
+
+            } else if (p.type === 'spark') {
+                // Draw pixel tail
+                if (p.tail) {
+                    for (let t = 0; t < p.tail.length; t++) {
+                        ctx.globalAlpha = alpha * (t / p.tail.length) * 0.6;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(Math.round(p.tail[t].x), Math.round(p.tail[t].y), p.size, p.size);
+                    }
+                    ctx.globalAlpha = alpha;
+                }
+                ctx.fillStyle = p.color;
+                ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+                // bright white core on fresh sparks
+                if (alpha > 0.7) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(Math.round(p.x) + 1, Math.round(p.y) + 1, Math.max(1, p.size - 2), Math.max(1, p.size - 2));
+                }
+
+            } else if (p.type === 'impact') {
+                // Pixelated expanding ring — draw as 8 square pixels around radius
+                ctx.fillStyle = p.color;
+                const r = p.radius;
+                const pts = 12;
+                for (let i = 0; i < pts; i++) {
+                    const a = (i / pts) * Math.PI * 2;
+                    ctx.fillRect(Math.round(p.x + Math.cos(a) * r) - 2, Math.round(p.y + Math.sin(a) * r) - 2, 4, 4);
+                }
 
             } else if (p.type === 'slash') {
                 ctx.fillStyle = p.color;
                 ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
 
             } else if (p.type === 'dmgnum') {
-                ctx.font = 'bold 10px "Courier New"';
+                ctx.font = 'bold 8px "Press Start 2P"';
                 ctx.imageSmoothingEnabled = false;
                 ctx.fillStyle = '#000';
                 ctx.fillText(p.value, Math.round(p.x) + 1, Math.round(p.y) + 1);
@@ -1549,6 +1711,10 @@ class Player {
         if (Input.down) dy += this.speed;
         if (Input.left) dx -= this.speed;
         if (Input.right) dx += this.speed;
+
+        // Hard speed cap so boots can't make you the Flash
+        const MAX_SPEED = 7.5;
+        if (this.speed > MAX_SPEED) this.speed = MAX_SPEED;
 
         // Normalize diagonal movement speed
         if (dx !== 0 && dy !== 0) {
@@ -2946,6 +3112,47 @@ function gameOver() {
     isGameOver = true;
     document.getElementById('game-over').style.display = 'block';
     document.getElementById('go-rooms').innerText = currentRoom - 1;
+    document.getElementById('go-score-final').innerText = score;
+    document.getElementById('go-dmg-final').innerText = player.dmg;
+
+    // Draw pixel-art "YOU DIED" letters onto the banner canvas
+    const gc = document.getElementById('go-title-canvas');
+    const gx = gc.getContext('2d');
+    gx.imageSmoothingEnabled = false;
+    gx.clearRect(0, 0, gc.width, gc.height);
+
+    // Each letter is a 5-wide x 7-tall bitmap (pixel = 4px)
+    const P = 4;
+    const LETTERS = {
+        Y:[[1,0,0,0,1],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0]],
+        O:[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+        U:[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0]],
+        ' ':[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]],
+        D:[[1,1,1,0,0],[1,0,0,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,1,0],[1,1,1,0,0]],
+        I:[[1,1,1,1,1],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[1,1,1,1,1]],
+        E:[[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1]]
+    };
+    const text = ['Y','O','U',' ','D','I','E','D'];
+    const totalW = text.reduce((s, ch) => s + ((LETTERS[ch] ? LETTERS[ch][0].length : 3) + 1) * P, 0);
+    let cx2 = Math.floor((gc.width - totalW) / 2);
+    const cy2 = Math.floor((gc.height - 7 * P) / 2);
+
+    text.forEach(ch => {
+        const bmp = LETTERS[ch];
+        if (!bmp) { cx2 += 3 * P; return; }
+        for (let row = 0; row < bmp.length; row++) {
+            for (let col = 0; col < bmp[row].length; col++) {
+                if (!bmp[row][col]) continue;
+                // shadow
+                gx.fillStyle = '#330000';
+                gx.fillRect(cx2 + col * P + 2, cy2 + row * P + 2, P, P);
+                // main pixel — top rows lighter
+                gx.fillStyle = row < 2 ? '#ff9090' : '#e74c3c';
+                gx.fillRect(cx2 + col * P, cy2 + row * P, P, P);
+            }
+        }
+        cx2 += (bmp[0].length + 1) * P;
+    });
 }
 
 function drawMap() {
