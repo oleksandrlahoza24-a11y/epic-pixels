@@ -739,27 +739,38 @@ const VFX = {
         }
     },
 
-    // Spawn a sword slash arc (directional sweep)
+    // Spawn a sword slash arc (directional sweep) with a trailing streak
     spawnSlash(cx, cy, dirX, dirY) {
         const perpX = -dirY;
         const perpY = dirX;
-        const count = 7;
+        const count = 9;
         for (let i = 0; i < count; i++) {
-            const t = (i / (count - 1)) - 0.5; // -0.5 to 0.5
-            const ox = dirX * 22 + perpX * t * 30;
-            const oy = dirY * 22 + perpY * t * 30;
+            const t = (i / (count - 1)) - 0.5;
+            const ox = dirX * 24 + perpX * t * 34;
+            const oy = dirY * 24 + perpY * t * 34;
+            const spd = 2.5 + Math.abs(t) * 1.5;
             this.particles.push({
                 type: 'slash',
                 x: cx + ox,
                 y: cy + oy,
-                vx: dirX * 3 + perpX * t * 1.5,
-                vy: dirY * 3 + perpY * t * 1.5,
-                life: 10 + i,
+                vx: dirX * spd + perpX * t * 1.2,
+                vy: dirY * spd + perpY * t * 1.2,
+                life: 8 + Math.floor((1 - Math.abs(t * 2)) * 6),
                 maxLife: 14,
-                size: 4 - Math.abs(t) * 2,
-                color: i % 2 === 0 ? '#ffffff' : '#ffe870'
+                size: Math.round(3 + (1 - Math.abs(t * 2)) * 3),
+                color: i % 3 === 0 ? '#ffe870' : i % 3 === 1 ? '#ffffff' : '#ffaa00'
             });
         }
+        // Add a central bright flash pixel
+        this.particles.push({
+            type: 'slash',
+            x: cx + dirX * 20,
+            y: cy + dirY * 20,
+            vx: dirX * 1, vy: dirY * 1,
+            life: 6, maxLife: 6,
+            size: 6,
+            color: '#ffffff'
+        });
     },
 
     // Spawn enemy death explosion: 6 texture chunks that fly outward + fade
@@ -801,13 +812,22 @@ const VFX = {
         this.spawnDust(ex + ew / 2, ey + eh / 2, 6, dustColor);
     },
 
-    // Spawn a flash ring (death flash)
+    // Spawn flash rings (death flash) — inner fast + outer slow
     spawnDeathFlash(cx, cy, color) {
         this.particles.push({
             type: 'ring',
             x: cx, y: cy,
-            life: 18, maxLife: 18,
-            radius: 4,
+            life: 14, maxLife: 14,
+            radius: 3,
+            expandRate: 5,
+            color: color || '#ffffff'
+        });
+        this.particles.push({
+            type: 'ring',
+            x: cx, y: cy,
+            life: 22, maxLife: 22,
+            radius: 2,
+            expandRate: 2.5,
             color: color || '#ffffff'
         });
     },
@@ -878,7 +898,7 @@ const VFX = {
                 p.vx *= 0.92;
                 p.rot += p.rotSpeed;
             } else if (p.type === 'ring') {
-                p.radius += 4;
+                p.radius += p.expandRate || 4;
             } else if (p.type === 'itemthrow') {
                 if (!p.landed) {
                     p.x += p.vx;
@@ -1110,7 +1130,10 @@ class Player {
                 e.x += this.dir.x * 20;
                 e.y += this.dir.y * 20;
 
-                // Hit dust + damage number
+                // Hit flash + dust + damage number
+                e.hitFlash = 6;
+                e.squishX = 0.7;
+                e.squishY = 1.3;
                 VFX.spawnDust(e.x + e.width / 2, e.y + e.height / 2, 5, '#ffffff');
                 VFX.spawnDamageNumber(e.x + e.width / 2, e.y, this.dmg, '#ffe870');
 
@@ -1144,24 +1167,49 @@ class Player {
     }
 
     draw() {
-        if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return; // Flash effect
+        if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
-        // Flip horizontally based on facing direction, or just draw
-        // (For simplicity and perf on all devices, we just draw the texture)
-        ctx.drawImage(Textures.player, this.x, this.y, this.width, this.height);
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
 
-        if (this.type === 'heart') {
-                player.hp = Math.min(player.maxHp, player.hp + 25);
-            } else if (this.type === 'sword') {
-                player.dmg += 5;
-            } else if (this.type === 'boot') {
-                player.speed += 0.2;
-            }
+        // Flip sprite to face movement direction
+        if (this.dir.x < 0) {
+            ctx.translate(this.x + this.width, this.y);
+            ctx.scale(-1, 1);
+            ctx.drawImage(Textures.player, 0, 0, this.width, this.height);
+        } else {
+            ctx.drawImage(Textures.player, this.x, this.y, this.width, this.height);
+        }
 
-            VFX.spawnPickup(this.x + this.width / 2, this.y + this.height / 2);
-            score += 50;
-            updateUI();
-            return true; // Flag for deletion
+        ctx.restore();
+
+        // Attack range indicator
+        if (this.isAttacking) {
+            const range = 28;
+            const sx = this.x + this.width / 2 + (this.dir.x * range) - 12;
+            const sy = this.y + this.height / 2 + (this.dir.y * range) - 12;
+            const flashAlpha = (this.attackTimer / 10) * 0.35;
+            ctx.save();
+            ctx.globalAlpha = flashAlpha;
+            ctx.fillStyle = '#ffe870';
+            ctx.fillRect(Math.round(sx), Math.round(sy), 24, 24);
+            ctx.restore();
+        }
+
+        // Footstep dust while moving
+        const moving = Input.up || Input.down || Input.left || Input.right;
+        if (moving && Math.random() < 0.12) {
+            VFX.particles.push({
+                type: 'dust',
+                x: this.x + this.width / 2 + (Math.random() - 0.5) * 6,
+                y: this.y + this.height - 2,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: 0.3 + Math.random() * 0.3,
+                life: 10, maxLife: 10,
+                size: 2,
+                color: '#34495e'
+            });
+        }
     }
 }
 
@@ -1172,10 +1220,10 @@ class Enemy {
         this.width = TILE_SIZE - 6;
         this.height = TILE_SIZE - 6;
         this.type = type; // 'slime' or 'demon'
-        
+
         // Stats scale with room level
         const scale = 1 + (currentRoom * 0.1);
-        
+
         if (type === 'slime') {
             this.maxHp = 30 * scale;
             this.speed = 1.5;
@@ -1187,30 +1235,49 @@ class Enemy {
             this.dmg = 20 * scale;
             this.tex = Textures.demon;
         }
-        
+
         this.hp = this.maxHp;
+        this.bob = Math.random() * Math.PI * 2;  // Offset so enemies don't sync
+        this.hitFlash = 0;  // Frames of white hit flash remaining
+        // Slimes squish when they move
+        this.squishX = 1;
+        this.squishY = 1;
+        this.squishTimer = 0;
     }
 
     update() {
+        this.bob += this.type === 'slime' ? 0.12 : 0.08;
+        if (this.hitFlash > 0) this.hitFlash--;
+
+        // Squish decay
+        this.squishX += (1 - this.squishX) * 0.2;
+        this.squishY += (1 - this.squishY) * 0.2;
+
         // Move towards player
         let dx = player.x - this.x;
         let dy = player.y - this.y;
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
         if (dist > 0) {
             let vx = (dx / dist) * this.speed;
             let vy = (dy / dist) * this.speed;
 
-            // Simple movement with wall sliding
             this.x += vx;
             if (this.checkWallCollision()) this.x -= vx;
 
             this.y += vy;
             if (this.checkWallCollision()) this.y -= vy;
+
+            // Slime squishes as it hops
+            if (this.type === 'slime') {
+                const hop = Math.sin(this.bob);
+                this.squishX = 1 + Math.abs(hop) * 0.15;
+                this.squishY = 1 - Math.abs(hop) * 0.15;
+            }
         }
 
-        // Damage Player
-        if (dist < (this.width/2 + player.width/2)) {
+        // Damage Player on contact
+        if (dist < (this.width / 2 + player.width / 2)) {
             player.takeDamage(this.dmg);
         }
     }
@@ -1233,27 +1300,57 @@ class Enemy {
     }
 
     draw() {
-        ctx.drawImage(this.tex, this.x, this.y, this.width, this.height);
+        const cx = Math.round(this.x + this.width / 2);
+        const cy = Math.round(this.y + this.height / 2);
 
-        // Pixel HP Bar
-        const hpPercent = Math.max(0, this.hp / this.maxHp);
-        const bx = Math.round(this.x);
-        const by = Math.round(this.y) - 9;
-        const bw = this.width;
-        // Background
-        ctx.fillStyle = '#1a0000';
-        ctx.fillRect(bx, by, bw, 5);
-        // Fill
-        const fillColor = hpPercent > 0.6 ? '#2ecc71' : hpPercent > 0.3 ? '#f1c40f' : '#e74c3c';
-        ctx.fillStyle = fillColor;
-        ctx.fillRect(bx, by, Math.round(bw * hpPercent), 5);
-        // Top shine pixel row
-        ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.fillRect(bx, by, Math.round(bw * hpPercent), 2);
-        // Border
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 4);
+        // Vertical bob offset (demons sway, slimes hop)
+        const bobOffset = this.type === 'slime'
+            ? -Math.abs(Math.sin(this.bob)) * 3
+            : Math.sin(this.bob) * 1.5;
+
+        // Ground shadow ellipse
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(cx, this.y + this.height - 1, this.width * 0.4 * this.squishX, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Draw sprite with squish transform
+        ctx.save();
+        ctx.translate(cx, cy + bobOffset);
+        ctx.scale(this.squishX, this.squishY);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(this.tex, -this.width / 2, -this.height / 2, this.width, this.height);
+
+        // Hit flash: overlay white on top with source-atop
+        if (this.hitFlash > 0) {
+            ctx.globalAlpha = (this.hitFlash / 6) * 0.8;
+            ctx.globalCompositeOperation = 'source-atop';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+        }
+
+        ctx.restore();
+
+        // Pixel HP Bar (only show when damaged)
+        if (this.hp < this.maxHp) {
+            const hpPercent = Math.max(0, this.hp / this.maxHp);
+            const bx = Math.round(this.x);
+            const by = Math.round(this.y + bobOffset) - 10;
+            const bw = this.width;
+            ctx.fillStyle = '#1a0000';
+            ctx.fillRect(bx, by, bw, 5);
+            const fillColor = hpPercent > 0.6 ? '#2ecc71' : hpPercent > 0.3 ? '#f1c40f' : '#e74c3c';
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(bx, by, Math.round(bw * hpPercent), 5);
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            ctx.fillRect(bx, by, Math.round(bw * hpPercent), 2);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 4);
+        }
     }
 }
 
@@ -1403,34 +1500,96 @@ class Chest {
         this.height = TILE_SIZE;
         this.opened = false;
         this.bob = 0;
-        this.openTimer = 0; // frames since opened, drives animation
         this.glowPulse = 0;
+        this.openTimer = 0;
+        // Pre-open shake: triggers when player is close but hasn't touched yet
+        this.shakeIntensity = 0;
+        this.shakeX = 0;
+        // Spawn ring animation on open
+        this.openRings = [];
+        // Ambient float particles timer
+        this.ambientTimer = 0;
     }
 
     update() {
         this.glowPulse += 0.05;
+        this.ambientTimer++;
+
         if (!this.opened) {
-            this.bob = Math.sin(Date.now() / 500) * 1.5;
-            // Check player proximity to open
+            this.bob = Math.sin(Date.now() / 450) * 1.5;
+
             const cx = this.x + this.width / 2;
             const cy = this.y + this.height / 2;
             const px = player.x + player.width / 2;
             const py = player.y + player.height / 2;
             const dist = Math.sqrt((cx - px) ** 2 + (cy - py) ** 2);
-            if (dist < 28) {
+
+            // Shake harder as player gets close
+            if (dist < 80) {
+                this.shakeIntensity = (1 - dist / 80) * 2.5;
+                this.shakeX = (Math.random() - 0.5) * this.shakeIntensity;
+
+                // Emit anticipation particles
+                if (dist < 60 && this.ambientTimer % 6 === 0) {
+                    VFX.particles.push({
+                        type: 'dust',
+                        x: cx + (Math.random() - 0.5) * 14,
+                        y: cy - 4 + (Math.random() - 0.5) * 6,
+                        vx: (Math.random() - 0.5) * 0.6,
+                        vy: -0.9 - Math.random() * 0.5,
+                        life: 18, maxLife: 18,
+                        size: 2,
+                        color: '#f1c40f'
+                    });
+                }
+            } else {
+                this.shakeIntensity *= 0.8;
+                this.shakeX *= 0.8;
+            }
+
+            if (dist < 26) {
                 this.open();
             }
+
         } else {
             this.openTimer++;
+
+            // After open: keep emitting rising gold dust for a few seconds
+            if (this.openTimer < 90 && this.ambientTimer % 4 === 0) {
+                VFX.particles.push({
+                    type: 'dust',
+                    x: this.x + this.width / 2 + (Math.random() - 0.5) * 20,
+                    y: this.y + this.height / 2 + (Math.random() - 0.5) * 8,
+                    vx: (Math.random() - 0.5) * 1.0,
+                    vy: -1.2 - Math.random() * 0.8,
+                    life: 28, maxLife: 28,
+                    size: 2,
+                    color: Math.random() < 0.5 ? '#f1c40f' : '#ffffff'
+                });
+            }
+
+            // Tick open rings
+            for (let i = this.openRings.length - 1; i >= 0; i--) {
+                this.openRings[i].r += 3.5;
+                this.openRings[i].life -= 1;
+                if (this.openRings[i].life <= 0) this.openRings.splice(i, 1);
+            }
         }
     }
 
     open() {
         if (this.opened) return;
         this.opened = true;
-        screenShake = 5;
+        screenShake = 8;
 
-        // Throw 2-3 items out of the chest with rarity rolls
+        // Spawn 3 expanding rings for dramatic open effect
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                this.openRings.push({ r: 4, life: 18, maxLife: 18 });
+            }, i * 80);
+        }
+
+        // Throw 2-3 items
         const count = 2 + Math.floor(Math.random() * 2);
         const types = ['heart', 'sword', 'boot'];
         for (let i = 0; i < count; i++) {
@@ -1439,43 +1598,89 @@ class Chest {
             let tex = Textures.itemHeart;
             if (type === 'sword') tex = Textures.itemSword;
             if (type === 'boot') tex = Textures.itemBoot;
-            // Stagger throws slightly
             setTimeout(() => {
                 VFX.spawnChestThrow(
                     this.x + this.width / 2,
                     this.y + this.height / 2,
                     tex, type, rarity
                 );
-            }, i * 120);
+            }, i * 130);
         }
 
-        // Gold dust burst
-        VFX.spawnDust(this.x + this.width / 2, this.y + this.height / 2, 12, '#f1c40f');
+        // Big gold burst + multiple flash rings
+        VFX.spawnDust(this.x + this.width / 2, this.y + this.height / 2, 20, '#f1c40f');
+        VFX.spawnDust(this.x + this.width / 2, this.y + this.height / 2, 8, '#ffffff');
         VFX.spawnDeathFlash(this.x + this.width / 2, this.y + this.height / 2, '#f1c40f');
+        setTimeout(() => VFX.spawnDeathFlash(this.x + this.width / 2, this.y + this.height / 2, '#fff8dc'), 120);
     }
 
     draw() {
         const tex = this.opened ? Textures.chestOpen : Textures.chestClosed;
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
         const offsetY = this.opened ? 0 : this.bob;
+        const offsetX = this.opened ? 0 : this.shakeX;
 
-        // Glow under chest
+        // Ground shadow
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(cx, this.y + this.height, this.width * 0.4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Closed: pulsing floor glow + proximity aura
         if (!this.opened) {
-            const cx = this.x + this.width / 2;
-            const cy = this.y + this.height / 2;
-            const pulse = 0.4 + Math.sin(this.glowPulse) * 0.2;
-            const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 20);
-            grad.addColorStop(0, '#f1c40f88');
+            const pulse = 0.35 + Math.sin(this.glowPulse) * 0.18;
+            const glowR = 22 + Math.sin(this.glowPulse * 0.7) * 4;
+            const grad = ctx.createRadialGradient(cx, cy, 3, cx, cy, glowR);
+            grad.addColorStop(0, '#f1c40f99');
             grad.addColorStop(1, '#f1c40f00');
             ctx.save();
             ctx.globalAlpha = pulse;
             ctx.fillStyle = grad;
             ctx.beginPath();
-            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
             ctx.fill();
+            ctx.restore();
+
+            // Pixel proximity prompt: "!" above chest when player is near
+            const px = player.x + player.width / 2;
+            const py = player.y + player.height / 2;
+            const dist = Math.sqrt((cx - px) ** 2 + (cy - py) ** 2);
+            if (dist < 70) {
+                const promptAlpha = Math.min(1, (70 - dist) / 40);
+                const promptBob = Math.sin(Date.now() / 300) * 2;
+                ctx.save();
+                ctx.globalAlpha = promptAlpha;
+                ctx.font = 'bold 11px "Courier New"';
+                ctx.fillStyle = '#000';
+                ctx.fillText('!', cx - 3 + 1, this.y - 6 + promptBob + 1);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillText('!', cx - 3, this.y - 6 + promptBob);
+                ctx.restore();
+            }
+        }
+
+        // Open rings radiating outward
+        for (const ring of this.openRings) {
+            const ra = ring.life / ring.maxLife;
+            ctx.save();
+            ctx.globalAlpha = ra * 0.6;
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, ring.r, 0, Math.PI * 2);
+            ctx.stroke();
             ctx.restore();
         }
 
-        ctx.drawImage(tex, this.x, Math.round(this.y + offsetY), this.width, this.height);
+        // Draw chest sprite
+        ctx.save();
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(tex, Math.round(this.x + offsetX), Math.round(this.y + offsetY), this.width, this.height);
+        ctx.restore();
     }
 }
 
