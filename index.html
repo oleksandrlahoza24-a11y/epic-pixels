@@ -2,1488 +2,1763 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>WATCHER</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@200;300;400;500&display=swap');
-
-    :root {
-      --bg: #080808;
-      --surface: #111111;
-      --surface2: #191919;
-      --surface3: #242424;
-      --border: rgba(255, 255, 255, 0.07);
-      --border2: rgba(255, 255, 255, 0.12);
-      --text: #f0f0f0;
-      --text2: #888;
-      --text3: #555;
-      --accent: #e8e0cc;
-      --accent2: #b5a98a;
-      --red: #c0392b;
-      --amber: #d4a843;
-      --green: #3a7d44;
-      --blue: #3a6494;
-      --r: 6px;
-      --r2: 10px;
-      --font: 'DM Sans', sans-serif;
-      --mono: 'DM Mono', monospace;
-    }
-
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 14px;
-      overflow: hidden;
-      touch-action: manipulation;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-
-    #app {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* ── TOP BAR ── */
-    #topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px 10px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      background: var(--bg);
-      z-index: 10;
-    }
-
-    #logo {
-      font-family: var(--mono);
-      font-size: 13px;
-      letter-spacing: 0.22em;
-      color: var(--accent);
-      font-weight: 400;
-      text-transform: uppercase;
-    }
-
-    #topbar-right {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .icon-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text2);
-      width: 36px;
-      height: 36px;
-      border-radius: var(--r);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 17px;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-
-    .icon-btn:active {
-      background: var(--surface3);
-      color: var(--text);
-    }
-
-    .icon-btn.active {
-      border-color: var(--accent2);
-      color: var(--accent);
-    }
-
-    /* ── MAIN LAYOUT ── */
-    #main {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    /* ── VIDEO ZONE ── */
-    #video-zone {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      overflow: hidden;
-    }
-
-    #player-wrap {
-      flex: 1;
-      background: #000;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    #player-wrap video,
-    #player-wrap audio {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    #canvas-overlay {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-    }
-
-    #drop-zone {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      cursor: pointer;
-    }
-
-    #drop-zone i {
-      font-size: 40px;
-      color: var(--text3);
-    }
-
-    #drop-zone p {
-      color: var(--text3);
-      font-size: 13px;
-      letter-spacing: 0.05em;
-    }
-
-    #drop-zone.hidden {
-      display: none;
-    }
-
-    #ambient-glow {
-      position: absolute;
-      inset: -20px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.5s;
-      filter: blur(40px) saturate(2);
-      background: radial-gradient(ellipse at center, var(--glow-color, #444) 0%, transparent 70%);
-    }
-
-    #ambient-glow.active {
-      opacity: 0.25;
-    }
-
-    /* ── PLAYER CONTROLS ── */
-    #controls {
-      padding: 10px 16px 12px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    #progress-bar-wrap {
-      width: 100%;
-      height: 3px;
-      background: var(--surface3);
-      border-radius: 2px;
-      margin-bottom: 10px;
-      cursor: pointer;
-      position: relative;
-    }
-
-    #progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      width: 0%;
-      transition: width 0.1s linear;
-    }
-
-    #progress-bar-wrap:active #progress-bar-fill {
-      background: var(--accent2);
-    }
-
-    #ctrl-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .ctrl-btn {
-      background: none;
-      border: none;
-      color: var(--text2);
-      cursor: pointer;
-      font-size: 20px;
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--r);
-      transition: color 0.15s;
-    }
-
-    .ctrl-btn:active {
-      color: var(--accent);
-    }
-
-    .ctrl-btn.active {
-      color: var(--accent);
-    }
-
-    #time-display {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--text3);
-      margin-left: 4px;
-    }
-
-    #vol-wrap {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-left: auto;
-    }
-
-    #vol-wrap i {
-      font-size: 16px;
-      color: var(--text3);
-    }
-
-    #vol-slider {
-      width: 70px;
-    }
-
-    /* ── SIDE PANEL ── */
-    #side-panel {
-      width: 280px;
-      min-width: 280px;
-      background: var(--surface);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: width 0.25s, min-width 0.25s;
-    }
-
-    #side-panel.collapsed {
-      width: 0;
-      min-width: 0;
-    }
-
-    #panel-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .ptab {
-      flex: 1;
-      background: none;
-      border: none;
-      color: var(--text3);
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      padding: 11px 4px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.15s;
-    }
-
-    .ptab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent2);
-    }
-
-    #panel-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px 14px 20px;
-    }
-
-    #panel-content::-webkit-scrollbar {
-      width: 3px;
-    }
-
-    #panel-content::-webkit-scrollbar-thumb {
-      background: var(--surface3);
-      border-radius: 2px;
-    }
-
-    .panel-section {
-      margin-bottom: 20px;
-    }
-
-    .section-label {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text3);
-      margin-bottom: 10px;
-    }
-
-    /* ── SLIDERS ── */
-    input[type=range] {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 100%;
-      height: 3px;
-      background: var(--surface3);
-      border-radius: 2px;
-      outline: none;
-      cursor: pointer;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      background: var(--accent);
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.1s;
-    }
-
-    input[type=range]:active::-webkit-slider-thumb {
-      transform: scale(1.3);
-    }
-
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .slider-label {
-      font-size: 11px;
-      color: var(--text2);
-      width: 68px;
-      flex-shrink: 0;
-    }
-
-    .slider-row input[type=range] {
-      flex: 1;
-    }
-
-    .slider-val {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--text3);
-      width: 32px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    /* ── EQ ── */
-    #eq-bars {
-      display: flex;
-      gap: 5px;
-      align-items: flex-end;
-      height: 60px;
-      padding: 4px 0;
-    }
-
-    .eq-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .eq-col input[type=range] {
-      writing-mode: vertical-lr;
-      direction: rtl;
-      -webkit-appearance: slider-vertical;
-      appearance: slider-vertical;
-      width: 3px;
-      height: 48px;
-    }
-
-    .eq-col input[type=range]::-webkit-slider-thumb {
-      width: 12px;
-      height: 12px;
-    }
-
-    .eq-col span {
-      font-family: var(--mono);
-      font-size: 8px;
-      color: var(--text3);
-    }
-
-    /* ── PRESETS ── */
-    .preset-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .preset-btn {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text2);
-      padding: 8px 6px;
-      border-radius: var(--r);
-      cursor: pointer;
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      text-align: center;
-      transition: all 0.15s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .preset-btn i {
-      font-size: 16px;
-    }
-
-    .preset-btn:active {
-      background: var(--surface3);
-      color: var(--accent);
-      border-color: var(--accent2);
-    }
-
-    .preset-btn.active {
-      background: var(--surface3);
-      color: var(--accent);
-      border-color: var(--accent2);
-    }
-
-    /* ── VISUAL FX ── */
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .toggle-label {
-      font-size: 12px;
-      color: var(--text2);
-    }
-
-    .toggle-switch {
-      width: 34px;
-      height: 18px;
-      background: var(--surface3);
-      border-radius: 9px;
-      position: relative;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-
-    .toggle-switch::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      background: var(--text3);
-      transition: all 0.2s;
-    }
-
-    .toggle-switch.on {
-      background: var(--accent2);
-      border-color: var(--accent);
-    }
-
-    .toggle-switch.on::after {
-      left: 18px;
-      background: var(--bg);
-    }
-
-    /* ── SETTINGS PANEL ── */
-    .settings-section {
-      margin-bottom: 18px;
-    }
-
-    .settings-label {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--text3);
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    select {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 12px;
-      padding: 7px 10px;
-      border-radius: var(--r);
-      width: 100%;
-      cursor: pointer;
-      outline: none;
-      -webkit-appearance: none;
-    }
-
-    /* ── VISUALIZER CANVAS ── */
-    #visualizer-canvas {
-      width: 100%;
-      height: 40px;
-      display: block;
-      margin: 6px 0 2px;
-      border-radius: var(--r);
-      background: transparent;
-    }
-
-    /* ── INFO STRIP ── */
-    #info-strip {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      padding: 7px 16px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .info-chip {
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--text3);
-      letter-spacing: 0.08em;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .info-chip i {
-      font-size: 11px;
-    }
-
-    #preset-label {
-      margin-left: auto;
-      font-family: var(--mono);
-      font-size: 9px;
-      color: var(--accent2);
-      letter-spacing: 0.1em;
-    }
-
-    /* ── TOAST ── */
-    #toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--surface3);
-      border: 1px solid var(--border2);
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      padding: 8px 16px;
-      border-radius: 20px;
-      opacity: 0;
-      transition: all 0.25s;
-      pointer-events: none;
-      white-space: nowrap;
-      z-index: 100;
-    }
-
-    #toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* ── FULLSCREEN ── */
-    #player-wrap.fullscreen-mode {
-      position: fixed;
-      inset: 0;
-      z-index: 999;
-      background: #000;
-    }
-
-    /* ── WAVEFORM ── */
-    #waveform-bar {
-      display: flex;
-      gap: 1px;
-      align-items: center;
-      justify-content: center;
-      height: 28px;
-      padding: 0 4px;
-    }
-
-    .wf-line {
-      width: 2px;
-      background: var(--accent2);
-      border-radius: 1px;
-      opacity: 0.6;
-      transition: height 0.1s;
-    }
-
-    /* ── FILE INPUT ── */
-    #file-input {
-      display: none;
-    }
-
-    /* ── SCROLLBAR GLOBAL ── */
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: var(--surface3) transparent;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <!-- Viewport settings strictly designed to prevent zooming and make it full screen on iPads -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Infinite Pixel Dungeon</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #111;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            touch-action: none;
+            /* Prevents swipe-to-refresh and zooming */
+            user-select: none;
+        }
+
+        /* UI Overlay */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Pixel panel shared style */
+        .px-panel {
+            background: #0d0d1a;
+            outline: 2px solid #000;
+            box-shadow: 3px 3px 0px #000, inset 1px 1px 0px #3a3a5a, inset -1px -1px 0px #05050f;
+            padding: 6px 10px 8px 10px;
+            image-rendering: pixelated;
+        }
+
+        /* Left stats panel */
+        #stats-left {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* Pixel stat row: icon + label + bar or value */
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0px;
+            /* hide any stray whitespace */
+        }
+
+        .stat-row svg {
+            flex-shrink: 0;
+            image-rendering: pixelated;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #aaaacc;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px;
+            min-width: 28px;
+        }
+
+        /* HP bar container */
+        .hp-bar-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .hp-bar-outer {
+            width: 80px;
+            height: 10px;
+            background: #1a0000;
+            outline: 2px solid #000;
+            box-shadow: inset 1px 1px 0px #000;
+            image-rendering: pixelated;
+        }
+
+        .hp-bar-inner {
+            height: 100%;
+            background: #e74c3c;
+            box-shadow: inset 0 2px 0 #ff7070;
+            transition: width 0.15s steps(10);
+        }
+
+        .hp-bar-inner.high {
+            background: #2ecc71;
+            box-shadow: inset 0 2px 0 #6eff9a;
+        }
+
+        .hp-bar-inner.mid {
+            background: #f1c40f;
+            box-shadow: inset 0 2px 0 #ffe870;
+        }
+
+        .hp-bar-inner.low {
+            background: #e74c3c;
+            box-shadow: inset 0 2px 0 #ff7070;
+        }
+
+        .hp-text {
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0px;
+            min-width: 52px;
+        }
+
+        /* Stat value badge */
+        .stat-val {
+            font-size: 11px;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 0px;
+            background: #1a1a2e;
+            outline: 1px solid #000;
+            padding: 1px 4px;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        /* Right panel */
+        #stats-right {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-end;
+        }
+
+        .stat-row-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0px;
+        }
+
+        .stat-row-right svg {
+            flex-shrink: 0;
+            image-rendering: pixelated;
+        }
+
+        .stat-label-right {
+            font-size: 11px;
+            color: #aaaacc;
+            text-shadow: 1px 1px 0 #000;
+            letter-spacing: 1px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* Game Screen */
+        #game-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        canvas {
+            background-color: #222;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            image-rendering: pixelated;
+            /* Keeps pixel art crisp */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* iPad / Touch Controls Container */
+        #controls {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            box-sizing: border-box;
+            z-index: 20;
+        }
+
+        /* D-Pad Layout */
+        .dpad {
+            position: relative;
+            width: 190px;
+            height: 190px;
+        }
+
+
+
+
+        .btn {
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            background: #1a1a2e;
+            border: none;
+            border-radius: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            image-rendering: pixelated;
+            box-shadow: 4px 4px 0px #000, inset 2px 2px 0px #4a4a6a, inset -2px -2px 0px #0a0a1a;
+            cursor: pointer;
+            outline: 2px solid #000;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+
+
+        .btn:active {
+            box-shadow: 2px 2px 0px #000, inset 2px 2px 0px #0a0a1a, inset -2px -2px 0px #4a4a6a;
+            transform: translate(2px, 2px);
+        }
+
+
+
+
+        .btn svg {
+            image-rendering: pixelated;
+        }
+
+
+
+
+        #btn-up {
+            top: 0;
+            left: 63px;
+        }
+
+        #btn-down {
+            bottom: 0;
+            left: 63px;
+        }
+
+        #btn-left {
+            top: 63px;
+            left: 0;
+        }
+
+        #btn-right {
+            top: 63px;
+            right: 0;
+        }
+
+
+
+
+        /* Action Buttons */
+        .actions {
+            position: relative;
+            width: 120px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+
+
+        #btn-attack {
+            width: 96px;
+            height: 96px;
+            border-radius: 0;
+            background: #3d0000;
+            border: none;
+            outline: 2px solid #000;
+            box-shadow: 4px 4px 0px #000, inset 2px 2px 0px #992222, inset -2px -2px 0px #1a0000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            image-rendering: pixelated;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+
+
+
+        #btn-attack:active {
+            box-shadow: 2px 2px 0px #000, inset 2px 2px 0px #1a0000, inset -2px -2px 0px #992222;
+            transform: translate(2px, 2px);
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            text-align: center;
+            color: white;
+            border: 4px solid white;
+            z-index: 100;
+        }
+
+        #game-over h1 {
+            margin-top: 0;
+            color: #ff4444;
+        }
+
+        #game-over button {
+            padding: 15px 30px;
+            font-size: 20px;
+            font-family: inherit;
+            background: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        @media (min-width: 1024px) {
+
+            /* Fade out controls on big desktop screens where keyboard is assumed */
+            #controls {
+                opacity: 0.5;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-  <div id="app">
+    <div id="ui-layer">
+        <!-- Left: HP / DMG / SPD -->
+        <div id="stats-left" class="px-panel">
+            <!-- HP row -->
+            <div class="stat-row">
+                <!-- pixel heart icon -->
+                <svg width="12" height="12" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="0" width="1" height="1" fill="#e74c3c" />
+                    <rect x="3" y="0" width="1" height="1" fill="#e74c3c" />
+                    <rect x="0" y="1" width="2" height="1" fill="#e74c3c" />
+                    <rect x="2" y="1" width="2" height="1" fill="#ff7070" />
+                    <rect x="4" y="1" width="2" height="1" fill="#e74c3c" />
+                    <rect x="0" y="2" width="6" height="1" fill="#e74c3c" />
+                    <rect x="1" y="3" width="4" height="1" fill="#e74c3c" />
+                    <rect x="2" y="4" width="2" height="1" fill="#c0392b" />
+                    <rect x="3" y="5" width="1" height="1" fill="#c0392b" />
+                </svg>
+                <span class="stat-label">HP</span>
+                <div class="hp-bar-wrap">
+                    <div class="hp-bar-outer">
+                        <div class="hp-bar-inner high" id="ui-hp-bar" style="width:100%"></div>
+                    </div>
+                    <span class="hp-text"><span id="ui-hp">100</span>/<span id="ui-maxhp">100</span></span>
+                </div>
+            </div>
+            <!-- DMG row -->
+            <div class="stat-row">
+                <!-- pixel sword icon -->
+                <svg width="12" height="12" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="2" y="0" width="1" height="1" fill="#bdc3c7" />
+                    <rect x="2" y="1" width="1" height="1" fill="#bdc3c7" />
+                    <rect x="1" y="2" width="3" height="1" fill="#f1c40f" />
+                    <rect x="2" y="3" width="1" height="1" fill="#d35400" />
+                    <rect x="2" y="4" width="1" height="1" fill="#d35400" />
+                    <rect x="1" y="5" width="3" height="1" fill="#d35400" />
+                </svg>
+                <span class="stat-label">DMG</span>
+                <span class="stat-val" id="ui-dmg">10</span>
+            </div>
+            <!-- SPD row -->
+            <div class="stat-row">
+                <!-- pixel boot icon -->
+                <svg width="12" height="12" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="0" width="1" height="3" fill="#7f8c8d" />
+                    <rect x="2" y="1" width="1" height="2" fill="#95a5a6" />
+                    <rect x="1" y="3" width="3" height="1" fill="#7f8c8d" />
+                    <rect x="0" y="4" width="4" height="1" fill="#7f8c8d" />
+                    <rect x="0" y="5" width="5" height="1" fill="#636e72" />
+                </svg>
+                <span class="stat-label">SPD</span>
+                <span class="stat-val" id="ui-spd">4.0</span>
+            </div>
+        </div>
 
-    <!-- TOP BAR -->
-    <div id="topbar">
-      <div id="logo">Watcher</div>
-      <div id="topbar-right">
-        <button class="icon-btn active" id="btn-panel" title="Sound Panel" aria-label="Toggle sound panel">
-        <i class="ti ti-adjustments-horizontal"></i>
-      </button>
-        <button class="icon-btn" id="btn-fullscreen" title="Fullscreen" aria-label="Fullscreen">
-        <i class="ti ti-maximize"></i>
-      </button>
-        <button class="icon-btn" id="btn-settings" title="Settings" aria-label="Settings">
-        <i class="ti ti-settings"></i>
-      </button>
-      </div>
+        <!-- Right: Room / Score -->
+        <div id="stats-right" class="px-panel">
+            <!-- Room row -->
+            <div class="stat-row-right">
+                <span class="stat-label-right">ROOM</span>
+                <!-- pixel door icon -->
+                <svg width="12" height="12" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="0" width="4" height="1" fill="#8e44ad" />
+                    <rect x="0" y="1" width="1" height="5" fill="#8e44ad" />
+                    <rect x="5" y="1" width="1" height="5" fill="#8e44ad" />
+                    <rect x="1" y="1" width="4" height="4" fill="#2c3e50" />
+                    <rect x="4" y="3" width="1" height="1" fill="#f1c40f" />
+                </svg>
+                <span class="stat-val" id="ui-room">1</span>
+            </div>
+            <!-- Score row -->
+            <div class="stat-row-right">
+                <span class="stat-label-right">SCORE</span>
+                <!-- pixel coin icon -->
+                <svg width="12" height="12" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="0" width="4" height="1" fill="#f1c40f" />
+                    <rect x="0" y="1" width="1" height="4" fill="#f1c40f" />
+                    <rect x="5" y="1" width="1" height="4" fill="#d4ac0d" />
+                    <rect x="1" y="1" width="4" height="4" fill="#f1c40f" />
+                    <rect x="2" y="2" width="2" height="2" fill="#d4ac0d" />
+                    <rect x="1" y="5" width="4" height="1" fill="#d4ac0d" />
+                </svg>
+                <span class="stat-val" id="ui-score">0</span>
+            </div>
+        </div>
     </div>
 
-    <!-- MAIN -->
-    <div id="main">
-
-      <!-- VIDEO ZONE -->
-      <div id="video-zone">
-        <div id="player-wrap" id="player-wrap">
-          <div id="ambient-glow"></div>
-          <video id="video-el" style="display:none"></video>
-          <audio id="audio-el" style="display:none"></audio>
-          <canvas id="canvas-overlay"></canvas>
-          <div id="drop-zone" onclick="document.getElementById('file-input').click()">
-            <i class="ti ti-file-music"></i>
-            <p>Tap to load video or audio</p>
-            <p style="font-size:11px; margin-top:4px; opacity:0.5">MP4 · MOV · MP3 · WAV · AAC · FLAC</p>
-          </div>
-          <input type="file" id="file-input" accept="video/*,audio/*">
-        </div>
-
-        <!-- VISUALIZER -->
-        <canvas id="visualizer-canvas"></canvas>
-
-        <!-- INFO STRIP -->
-        <div id="info-strip">
-          <div class="info-chip"><i class="ti ti-file"></i><span id="info-file">—</span></div>
-          <div class="info-chip"><i class="ti ti-clock"></i><span id="info-dur">—</span></div>
-          <div id="preset-label">NO PRESET</div>
-        </div>
-
-        <!-- CONTROLS -->
-        <div id="controls">
-          <div id="progress-bar-wrap" id="progress-bar-wrap">
-            <div id="progress-bar-fill"></div>
-          </div>
-          <div id="ctrl-row">
-            <button class="ctrl-btn" id="btn-skip-back" aria-label="Skip back 10s"><i class="ti ti-rewind-10"></i></button>
-            <button class="ctrl-btn" id="btn-play" aria-label="Play/Pause"><i class="ti ti-player-play"></i></button>
-            <button class="ctrl-btn" id="btn-skip-fwd" aria-label="Skip forward 10s"><i class="ti ti-fast-forward-10"></i></button>
-            <button class="ctrl-btn" id="btn-loop" aria-label="Loop"><i class="ti ti-repeat"></i></button>
-            <span id="time-display">0:00 / 0:00</span>
-            <div id="vol-wrap">
-              <i class="ti ti-volume"></i>
-              <input type="range" id="vol-slider" min="0" max="1" step="0.01" value="1">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SIDE PANEL -->
-      <div id="side-panel">
-        <div id="panel-tabs">
-          <button class="ptab active" data-tab="sound">Sound</button>
-          <button class="ptab" data-tab="visual">Visual</button>
-          <button class="ptab" data-tab="presets">Presets</button>
-          <button class="ptab" data-tab="settings">Config</button>
-        </div>
-        <div id="panel-content">
-
-          <!-- SOUND TAB -->
-          <div id="tab-sound" class="tab-pane">
-            <div class="panel-section">
-              <div class="section-label">Equalizer</div>
-              <div id="eq-bars">
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="60" orient="vertical"><span>60</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="170" orient="vertical"><span>170</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="310" orient="vertical"><span>310</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="600" orient="vertical"><span>600</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="1k" orient="vertical"><span>1k</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="3k" orient="vertical"><span>3k</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="6k" orient="vertical"><span>6k</span>
-                </div>
-                <div class="eq-col">
-                  <input type="range" class="eq-band" min="-12" max="12" value="0" data-freq="12k" orient="vertical"><span>12k</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Dynamics</div>
-              <div class="slider-row">
-                <span class="slider-label">Bass Boost</span>
-                <input type="range" id="bass-boost" min="0" max="20" value="0" step="0.5">
-                <span class="slider-val" id="bass-boost-val">0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Treble</span>
-                <input type="range" id="treble" min="-10" max="10" value="0" step="0.5">
-                <span class="slider-val" id="treble-val">0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Compression</span>
-                <input type="range" id="compression" min="1" max="20" value="1" step="0.5">
-                <span class="slider-val" id="compression-val">1</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Warmth</span>
-                <input type="range" id="warmth" min="0" max="10" value="0" step="0.5">
-                <span class="slider-val" id="warmth-val">0</span>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Spatial</div>
-              <div class="slider-row">
-                <span class="slider-label">Stereo Width</span>
-                <input type="range" id="stereo-width" min="0" max="2" value="1" step="0.05">
-                <span class="slider-val" id="stereo-width-val">1.0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Reverb</span>
-                <input type="range" id="reverb" min="0" max="1" value="0" step="0.01">
-                <span class="slider-val" id="reverb-val">0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Delay Mix</span>
-                <input type="range" id="delay-mix" min="0" max="0.8" value="0" step="0.01">
-                <span class="slider-val" id="delay-mix-val">0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Delay Time</span>
-                <input type="range" id="delay-time" min="0.05" max="1" value="0.25" step="0.01">
-                <span class="slider-val" id="delay-time-val">0.25</span>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Playback</div>
-              <div class="slider-row">
-                <span class="slider-label">Speed</span>
-                <input type="range" id="playback-speed" min="0.25" max="2" value="1" step="0.05">
-                <span class="slider-val" id="playback-speed-val">1.0×</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Pitch Shift</span>
-                <input type="range" id="pitch-shift" min="-6" max="6" value="0" step="0.5">
-                <span class="slider-val" id="pitch-shift-val">0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- VISUAL TAB -->
-          <div id="tab-visual" class="tab-pane" style="display:none">
-            <div class="panel-section">
-              <div class="section-label">Ambient</div>
-              <div class="toggle-row">
-                <span class="toggle-label">Ambient Glow</span>
-                <div class="toggle-switch" id="tog-ambient"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Vignette</span>
-                <div class="toggle-switch" id="tog-vignette"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Scan Lines</span>
-                <div class="toggle-switch" id="tog-scanlines"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Film Grain</span>
-                <div class="toggle-switch" id="tog-grain"></div>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Color</div>
-              <div class="slider-row">
-                <span class="slider-label">Brightness</span>
-                <input type="range" id="v-brightness" min="0.5" max="1.5" value="1" step="0.01">
-                <span class="slider-val" id="v-brightness-val">1.0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Contrast</span>
-                <input type="range" id="v-contrast" min="0.5" max="2" value="1" step="0.01">
-                <span class="slider-val" id="v-contrast-val">1.0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Saturation</span>
-                <input type="range" id="v-saturation" min="0" max="2" value="1" step="0.01">
-                <span class="slider-val" id="v-saturation-val">1.0</span>
-              </div>
-              <div class="slider-row">
-                <span class="slider-label">Warmth Tint</span>
-                <input type="range" id="v-warmth" min="-0.3" max="0.3" value="0" step="0.01">
-                <span class="slider-val" id="v-warmth-val">0</span>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Visualizer Style</div>
-              <div class="preset-grid">
-                <button class="preset-btn active" id="vis-bars" onclick="setVisStyle('bars')"><i class="ti ti-chart-bar"></i>Bars</button>
-                <button class="preset-btn" id="vis-wave" onclick="setVisStyle('wave')"><i class="ti ti-wave-sine"></i>Wave</button>
-                <button class="preset-btn" id="vis-circle" onclick="setVisStyle('circle')"><i class="ti ti-circle"></i>Radial</button>
-                <button class="preset-btn" id="vis-off" onclick="setVisStyle('off')"><i class="ti ti-eye-off"></i>Off</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- PRESETS TAB -->
-          <div id="tab-presets" class="tab-pane" style="display:none">
-            <div class="panel-section">
-              <div class="section-label">Sound Presets</div>
-              <div class="preset-grid">
-                <button class="preset-btn" onclick="applyPreset('cinema')"><i class="ti ti-movie"></i>Cinema</button>
-                <button class="preset-btn" onclick="applyPreset('music')"><i class="ti ti-music"></i>Music</button>
-                <button class="preset-btn" onclick="applyPreset('podcast')"><i class="ti ti-microphone"></i>Podcast</button>
-                <button class="preset-btn" onclick="applyPreset('night')"><i class="ti ti-moon"></i>Night</button>
-                <button class="preset-btn" onclick="applyPreset('bass')"><i class="ti ti-bolt"></i>Bass Heavy</button>
-                <button class="preset-btn" onclick="applyPreset('vocal')"><i class="ti ti-microphone-2"></i>Vocal Boost</button>
-                <button class="preset-btn" onclick="applyPreset('spatial')"><i class="ti ti-3d-cube-sphere"></i>Spatial</button>
-                <button class="preset-btn" onclick="applyPreset('lofi')"><i class="ti ti-vinyl"></i>Lo-Fi</button>
-                <button class="preset-btn" onclick="applyPreset('concert')"><i class="ti ti-building-stadium"></i>Concert</button>
-                <button class="preset-btn" onclick="applyPreset('flat')"><i class="ti ti-minus"></i>Flat</button>
-              </div>
-            </div>
-
-            <div class="panel-section">
-              <div class="section-label">Visual Presets</div>
-              <div class="preset-grid">
-                <button class="preset-btn" onclick="applyVisPreset('dark')"><i class="ti ti-contrast"></i>Dark Room</button>
-                <button class="preset-btn" onclick="applyVisPreset('warm')"><i class="ti ti-flame"></i>Warm</button>
-                <button class="preset-btn" onclick="applyVisPreset('vivid')"><i class="ti ti-palette"></i>Vivid</button>
-                <button class="preset-btn" onclick="applyVisPreset('cool')"><i class="ti ti-snowflake"></i>Cool</button>
-                <button class="preset-btn" onclick="applyVisPreset('noir')"><i class="ti ti-brand-twitch"></i>Noir</button>
-                <button class="preset-btn" onclick="applyVisPreset('clear')"><i class="ti ti-sun"></i>Clear</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SETTINGS TAB -->
-          <div id="tab-settings" class="tab-pane" style="display:none">
-            <div class="panel-section">
-              <div class="section-label">Display</div>
-              <div class="toggle-row">
-                <span class="toggle-label">Keep Screen On</span>
-                <div class="toggle-switch on" id="tog-screen"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Show Info Strip</span>
-                <div class="toggle-switch on" id="tog-infostrip"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Auto-hide Controls</span>
-                <div class="toggle-switch" id="tog-autohide"></div>
-              </div>
-            </div>
-            <div class="panel-section">
-              <div class="section-label">Audio Engine</div>
-              <div class="toggle-row">
-                <span class="toggle-label">Loudness Norm.</span>
-                <div class="toggle-switch" id="tog-loudness"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Auto EQ</span>
-                <div class="toggle-switch" id="tog-autoeq"></div>
-              </div>
-              <div class="toggle-row">
-                <span class="toggle-label">Noise Gate</span>
-                <div class="toggle-switch" id="tog-noisegate"></div>
-              </div>
-            </div>
-            <div class="panel-section">
-              <div class="section-label">Output</div>
-              <select id="output-select">
-              <option>Default Output</option>
-              <option>Headphones</option>
-              <option>Speaker</option>
-              <option>Bluetooth</option>
-            </select>
-            </div>
-            <div class="panel-section" style="margin-top:24px">
-              <button class="preset-btn" style="width:100%; flex-direction:row; gap:8px; padding:10px 14px;" onclick="resetAll()">
-              <i class="ti ti-refresh"></i> Reset All Settings
-            </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
+    <div id="game-container">
+        <!-- 640x480 resolution (20x15 grid of 32x32px tiles) -->
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
     </div>
-  </div>
 
-  <!-- TOAST -->
-  <div id="toast"></div>
+    <!-- On-screen iPad Touch Controls -->
+    <div id="controls">
+        <div class="dpad">
+            <div class="btn" id="btn-up">
+                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="1" width="1" height="1" fill="#fff" />
+                    <rect x="2" y="2" width="3" height="1" fill="#fff" />
+                    <rect x="1" y="3" width="5" height="1" fill="#fff" />
+                    <rect x="2" y="4" width="1" height="1" fill="#aaa" />
+                    <rect x="4" y="4" width="1" height="1" fill="#aaa" />
+                </svg>
+            </div>
+            <div class="btn" id="btn-left">
+                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="1" y="3" width="1" height="1" fill="#fff" />
+                    <rect x="2" y="2" width="1" height="3" fill="#fff" />
+                    <rect x="3" y="1" width="1" height="5" fill="#fff" />
+                    <rect x="4" y="2" width="1" height="1" fill="#aaa" />
+                    <rect x="4" y="4" width="1" height="1" fill="#aaa" />
+                </svg>
+            </div>
+            <div class="btn" id="btn-right">
+                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="3" width="1" height="1" fill="#fff" />
+                    <rect x="4" y="2" width="1" height="3" fill="#fff" />
+                    <rect x="3" y="1" width="1" height="5" fill="#fff" />
+                    <rect x="2" y="2" width="1" height="1" fill="#aaa" />
+                    <rect x="2" y="4" width="1" height="1" fill="#aaa" />
+                </svg>
+            </div>
+            <div class="btn" id="btn-down">
+                <svg width="28" height="28" viewBox="0 0 7 7" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="5" width="1" height="1" fill="#fff" />
+                    <rect x="2" y="4" width="3" height="1" fill="#fff" />
+                    <rect x="1" y="3" width="5" height="1" fill="#fff" />
+                    <rect x="2" y="2" width="1" height="1" fill="#aaa" />
+                    <rect x="4" y="2" width="1" height="1" fill="#aaa" />
+                </svg>
+            </div>
+        </div>
+        <div class="actions">
+            <div id="btn-attack">
+                <svg width="44" height="44" viewBox="0 0 11 11" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Blade -->
+                    <rect x="5" y="1" width="1" height="1" fill="#e0e0e0" />
+                    <rect x="4" y="2" width="3" height="1" fill="#bdc3c7" />
+                    <rect x="5" y="3" width="1" height="1" fill="#bdc3c7" />
+                    <rect x="5" y="4" width="1" height="1" fill="#bdc3c7" />
+                    <!-- Guard -->
+                    <rect x="3" y="5" width="5" height="1" fill="#f1c40f" />
+                    <rect x="3" y="6" width="1" height="1" fill="#d4ac0d" />
+                    <rect x="7" y="6" width="1" height="1" fill="#d4ac0d" />
+                    <!-- Hilt -->
+                    <rect x="5" y="6" width="1" height="1" fill="#d35400" />
+                    <rect x="5" y="7" width="1" height="1" fill="#d35400" />
+                    <rect x="5" y="8" width="1" height="1" fill="#a04000" />
+                    <!-- Pommel -->
+                    <rect x="4" y="9" width="3" height="1" fill="#d35400" />
+                </svg>
+            </div>
+        </div>
+    </div>
 
-  <script>
-    const $ = id => document.getElementById(id);
+    <div id="game-over">
+        <h1>YOU DIED</h1>
+        <p>Rooms Cleared: <span id="go-rooms">0</span></p>
+        <button onclick="location.reload()">RESTART</button>
+    </div>
 
-// ── STATE ──
-let audioCtx, sourceNode, analyserNode, gainNode, dynamicsCompressor, delayNode, delayGainNode, reverbNode, reverbGainNode, eqNodes = [], bassBoostNode, trebleNode, stereoMerger, stereoSplitter;
-let mediaEl = null;
-let isPlaying = false;
-let visStyle = 'bars';
-let animFrameId;
-let activePreset = '';
-let grain = false, scanlines = false, vignette = false, ambientGlow = false;
-let autohide = false, autohideTimer;
-let noiseGateEnabled = false, autoeqEnabled = false, loudnessEnabled = false;
-let currentFilter = '';
+    <script>
+        /**
+ * ---------------------------------------------------------
+ * 1. NUMBER GRID PIXEL ART DATA
+ * ---------------------------------------------------------
+ * Each number corresponds to a color in the palette.
+ * 0 is transparent.
+ */
+const PALETTE = [
+    null,       // 0: Transparent
+    '#000000',  // 1: Black (Outline)
+    '#ffffff',  // 2: White
+    '#ffccaa',  // 3: Skin
+    '#3498db',  // 4: Blue (Player Shirt)
+    '#2ecc71',  // 5: Green (Slime Enemy)
+    '#e74c3c',  // 6: Red (Demon Enemy / Health)
+    '#f1c40f',  // 7: Gold (Eyes / Powerup)
+    '#7f8c8d',  // 8: Wall Core
+    '#95a5a6',  // 9: Wall Highlight
+    '#2c3e50',  // 10: Floor Core
+    '#34495e',  // 11: Floor Highlight
+    '#8e44ad',  // 12: Magic Door
+    '#d35400',  // 13: Wood / Sword Hilt
+    '#bdc3c7'   // 14: Metal / Sword Blade
+];
 
-const EQ_FREQS = [60, 170, 310, 600, 1000, 3000, 6000, 12000];
-
-// ── AUDIO SETUP ──
-function initAudio(el) {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (sourceNode) { try { sourceNode.disconnect(); } catch(e) {} }
-
-  sourceNode = audioCtx.createMediaElementSource(el);
-
-  // EQ bands
-  eqNodes = EQ_FREQS.map((freq, i) => {
-    const f = audioCtx.createBiquadFilter();
-    f.type = (i === 0) ? 'lowshelf' : (i === EQ_FREQS.length - 1) ? 'highshelf' : 'peaking';
-    f.frequency.value = freq;
-    f.gain.value = 0;
-    return f;
-  });
-
-  // Bass boost
-  bassBoostNode = audioCtx.createBiquadFilter();
-  bassBoostNode.type = 'lowshelf';
-  bassBoostNode.frequency.value = 200;
-  bassBoostNode.gain.value = 0;
-
-  // Treble
-  trebleNode = audioCtx.createBiquadFilter();
-  trebleNode.type = 'highshelf';
-  trebleNode.frequency.value = 4000;
-  trebleNode.gain.value = 0;
-
-  // Compressor
-  dynamicsCompressor = audioCtx.createDynamicsCompressor();
-  dynamicsCompressor.threshold.value = -50;
-  dynamicsCompressor.knee.value = 40;
-  dynamicsCompressor.ratio.value = 1;
-  dynamicsCompressor.attack.value = 0.003;
-  dynamicsCompressor.release.value = 0.25;
-
-  // Delay
-  delayNode = audioCtx.createDelay(1.0);
-  delayNode.delayTime.value = 0.25;
-  delayGainNode = audioCtx.createGain();
-  delayGainNode.gain.value = 0;
-
-  // Reverb
-  reverbNode = audioCtx.createConvolver();
-  reverbGainNode = audioCtx.createGain();
-  reverbGainNode.gain.value = 0;
-  createReverb(0.5);
-
-  // Analyser
-  analyserNode = audioCtx.createAnalyser();
-  analyserNode.fftSize = 256;
-
-  // Gain
-  gainNode = audioCtx.createGain();
-  gainNode.gain.value = $('vol-slider').value;
-
-  // Chain: source -> eq bands -> bassBoost -> treble -> compressor -> delay -> analyser -> gain -> dest
-  let node = sourceNode;
-  eqNodes.forEach(f => { node.connect(f); node = f; });
-  node.connect(bassBoostNode);
-  bassBoostNode.connect(trebleNode);
-  trebleNode.connect(dynamicsCompressor);
-
-  // delay parallel
-  dynamicsCompressor.connect(delayNode);
-  delayNode.connect(delayGainNode);
-  delayGainNode.connect(analyserNode);
-
-  // reverb parallel
-  dynamicsCompressor.connect(reverbNode);
-  reverbNode.connect(reverbGainNode);
-  reverbGainNode.connect(analyserNode);
-
-  dynamicsCompressor.connect(analyserNode);
-  analyserNode.connect(gainNode);
-  gainNode.connect(audioCtx.destination);
-}
-
-function createReverb(duration) {
-  const sr = audioCtx.sampleRate;
-  const len = sr * (duration || 1);
-  const buf = audioCtx.createBuffer(2, len, sr);
-  for (let c = 0; c < 2; c++) {
-    const d = buf.getChannelData(c);
-    for (let i = 0; i < len; i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/len, 3);
-  }
-  reverbNode.buffer = buf;
-}
-
-// ── FILE LOAD ──
-$('file-input').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  const isVideo = file.type.startsWith('video');
-  const vid = $('video-el'), aud = $('audio-el');
-
-  if (isVideo) {
-    vid.src = url; vid.style.display = ''; aud.style.display = 'none'; mediaEl = vid;
-  } else {
-    aud.src = url; aud.style.display = ''; vid.style.display = 'none'; mediaEl = aud;
-  }
-
-  $('drop-zone').classList.add('hidden');
-  initAudio(mediaEl);
-  syncPlaybackSpeed();
-  mediaEl.play(); isPlaying = true; updatePlayBtn();
-
-  $('info-file').textContent = file.name.length > 22 ? file.name.slice(0,20)+'…' : file.name;
-  mediaEl.addEventListener('loadedmetadata', () => {
-    $('info-dur').textContent = fmt(mediaEl.duration);
-  }, { once: true });
-
-  mediaEl.addEventListener('timeupdate', onTimeUpdate);
-  mediaEl.addEventListener('ended', () => { isPlaying = false; updatePlayBtn(); });
-  startVisLoop();
-  toast('Loaded · ' + file.name.split('.').pop().toUpperCase());
-});
-
-// ── PROGRESS ──
-function onTimeUpdate() {
-  if (!mediaEl || !mediaEl.duration) return;
-  const pct = mediaEl.currentTime / mediaEl.duration * 100;
-  $('progress-bar-fill').style.width = pct + '%';
-  $('time-display').textContent = fmt(mediaEl.currentTime) + ' / ' + fmt(mediaEl.duration);
-  if (ambientGlow && $('video-el').style.display !== 'none') sampleAmbient();
-}
-
-$('progress-bar-wrap').addEventListener('click', e => {
-  if (!mediaEl) return;
-  const r = e.currentTarget.getBoundingClientRect();
-  mediaEl.currentTime = ((e.clientX - r.left) / r.width) * mediaEl.duration;
-});
-
-// ── PLAY CONTROLS ──
-$('btn-play').addEventListener('click', () => {
-  if (!mediaEl) { $('file-input').click(); return; }
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-  isPlaying ? (mediaEl.pause(), isPlaying=false) : (mediaEl.play(), isPlaying=true);
-  updatePlayBtn();
-});
-$('btn-skip-back').addEventListener('click', () => { if (mediaEl) mediaEl.currentTime = Math.max(0, mediaEl.currentTime-10); });
-$('btn-skip-fwd').addEventListener('click', () => { if (mediaEl) mediaEl.currentTime = Math.min(mediaEl.duration||0, mediaEl.currentTime+10); });
-$('btn-loop').addEventListener('click', function() {
-  if (!mediaEl) return;
-  mediaEl.loop = !mediaEl.loop;
-  this.classList.toggle('active', mediaEl.loop);
-});
-function updatePlayBtn() {
-  $('btn-play').innerHTML = isPlaying ? '<i class="ti ti-player-pause"></i>' : '<i class="ti ti-player-play"></i>';
-}
-function fmt(s) {
-  if (!s || isNaN(s)) return '0:00';
-  const m = Math.floor(s/60), sec = Math.floor(s%60);
-  return m + ':' + (sec<10?'0':'')+sec;
-}
-
-// ── VOLUME ──
-$('vol-slider').addEventListener('input', function() { if (gainNode) gainNode.gain.value = this.value; });
-
-// ── PLAYBACK SPEED ──
-function syncPlaybackSpeed() { if (mediaEl) mediaEl.playbackRate = parseFloat($('playback-speed').value); }
-
-// ── EQ ──
-document.querySelectorAll('.eq-band').forEach((el, i) => {
-  el.addEventListener('input', function() {
-    if (eqNodes[i]) eqNodes[i].gain.value = parseFloat(this.value);
-  });
-});
-
-// ── SLIDERS WIRING ──
-function wireSlider(id, valId, suffix, cb) {
-  const el = $(id), val = $(valId);
-  el.addEventListener('input', function() {
-    val.textContent = parseFloat(this.value).toFixed(suffix==='' ? 0 : 2) + suffix;
-    cb(parseFloat(this.value));
-  });
-}
-
-wireSlider('bass-boost','bass-boost-val','', v => { if (bassBoostNode) bassBoostNode.gain.value = v; });
-wireSlider('treble','treble-val','', v => { if (trebleNode) trebleNode.gain.value = v; });
-wireSlider('compression','compression-val','', v => { if (dynamicsCompressor) dynamicsCompressor.ratio.value = v; });
-wireSlider('warmth','warmth-val','', () => {});
-wireSlider('reverb','reverb-val','', v => { if (reverbGainNode) reverbGainNode.gain.value = v; });
-wireSlider('delay-mix','delay-mix-val','', v => { if (delayGainNode) delayGainNode.gain.value = v; });
-wireSlider('delay-time','delay-time-val','', v => { if (delayNode) delayNode.delayTime.value = v; });
-wireSlider('stereo-width','stereo-width-val','', () => {});
-
-$('playback-speed').addEventListener('input', function() {
-  $('playback-speed-val').textContent = parseFloat(this.value).toFixed(2) + '×';
-  syncPlaybackSpeed();
-});
-$('pitch-shift').addEventListener('input', function() {
-  $('pitch-shift-val').textContent = parseFloat(this.value).toFixed(1);
-});
-
-// Video filters
-function applyVideoFilter() {
-  const b = $('v-brightness').value, c = $('v-contrast').value, s = $('v-saturation').value, w = parseFloat($('v-warmth').value);
-  const vid = $('video-el');
-  let sepia = Math.max(0, w), hue = w < 0 ? Math.round(w * 60) : 0;
-  vid.style.filter = `brightness(${b}) contrast(${c}) saturate(${s}) sepia(${sepia}) hue-rotate(${hue}deg)`;
-}
-['v-brightness','v-contrast','v-saturation','v-warmth'].forEach(id => {
-  const valId = id + '-val';
-  $(id).addEventListener('input', function() {
-    $(valId).textContent = parseFloat(this.value).toFixed(2);
-    applyVideoFilter();
-  });
-});
-
-// ── TOGGLES ──
-function makeToggle(id, cb) {
-  const el = $(id);
-  el.addEventListener('click', function() {
-    this.classList.toggle('on');
-    cb(this.classList.contains('on'));
-  });
-  return el;
-}
-
-makeToggle('tog-ambient', v => {
-  ambientGlow = v;
-  if (!v) { $('ambient-glow').classList.remove('active'); $('ambient-glow').style.opacity = 0; }
-});
-makeToggle('tog-vignette', v => { vignette = v; drawOverlay(); });
-makeToggle('tog-scanlines', v => { scanlines = v; drawOverlay(); });
-makeToggle('tog-grain', v => { grain = v; startGrain(); });
-makeToggle('tog-screen', v => { if (v && navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{}); });
-makeToggle('tog-infostrip', v => { $('info-strip').style.display = v ? 'flex' : 'none'; });
-makeToggle('tog-autohide', v => { autohide = v; });
-makeToggle('tog-loudness', v => { loudnessEnabled = v; if (dynamicsCompressor) dynamicsCompressor.threshold.value = v ? -24 : -50; toast(v ? 'Loudness Norm. On' : 'Loudness Norm. Off'); });
-makeToggle('tog-autoeq', v => { autoeqEnabled = v; toast(v ? 'Auto EQ On' : 'Auto EQ Off'); });
-makeToggle('tog-noisegate', v => { noiseGateEnabled = v; toast(v ? 'Noise Gate On' : 'Noise Gate Off'); });
-
-// ── CANVAS OVERLAY (vignette, scan lines) ──
-function drawOverlay() {
-  const canvas = $('canvas-overlay');
-  const wrap = $('player-wrap');
-  canvas.width = wrap.offsetWidth;
-  canvas.height = wrap.offsetHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  if (vignette) {
-    const grd = ctx.createRadialGradient(canvas.width/2,canvas.height/2,canvas.height*0.2,canvas.width/2,canvas.height/2,canvas.height*0.9);
-    grd.addColorStop(0,'rgba(0,0,0,0)');
-    grd.addColorStop(1,'rgba(0,0,0,0.65)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-  }
-
-  if (scanlines) {
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    for (let y = 0; y < canvas.height; y += 3) ctx.fillRect(0,y,canvas.width,1);
-  }
-}
-
-// ── GRAIN ──
-let grainFrameId;
-function startGrain() {
-  cancelAnimationFrame(grainFrameId);
-  const canvas = $('canvas-overlay');
-  if (!grain) { drawOverlay(); return; }
-  function loop() {
-    drawOverlay();
-    const ctx = canvas.getContext('2d');
-    const iData = ctx.createImageData(canvas.width, canvas.height);
-    const d = iData.data;
-    for (let i = 0; i < d.length; i += 4) {
-      const n = (Math.random()*50)|0;
-      d[i]=d[i+1]=d[i+2]=n; d[i+3]=15;
-    }
-    ctx.putImageData(iData, 0, 0);
-    if (grain) grainFrameId = requestAnimationFrame(loop);
-  }
-  loop();
-}
-
-// ── AMBIENT GLOW ──
-const _tmpCanvas = document.createElement('canvas');
-const _tmpCtx = _tmpCanvas.getContext('2d');
-function sampleAmbient() {
-  const vid = $('video-el');
-  if (!vid.videoWidth) return;
-  _tmpCanvas.width = 16; _tmpCanvas.height = 9;
-  _tmpCtx.drawImage(vid, 0, 0, 16, 9);
-  const d = _tmpCtx.getImageData(0,0,16,9).data;
-  let r=0,g=0,b=0,n=0;
-  for (let i=0;i<d.length;i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
-  r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
-  const gl = $('ambient-glow');
-  gl.style.setProperty('--glow-color', `rgb(${r},${g},${b})`);
-  gl.style.background = `radial-gradient(ellipse at center, rgb(${r},${g},${b}) 0%, transparent 70%)`;
-  gl.classList.add('active');
-}
-
-// ── VISUALIZER ──
-let visCvs, visCtx;
-function startVisLoop() {
-  visCvs = $('visualizer-canvas');
-  visCtx = visCvs.getContext('2d');
-  cancelAnimationFrame(animFrameId);
-  function loop() {
-    animFrameId = requestAnimationFrame(loop);
-    if (!analyserNode || visStyle === 'off') { if (visCtx) { visCtx.clearRect(0,0,visCvs.width,visCvs.height); } return; }
-    visCvs.width = visCvs.offsetWidth;
-    visCvs.height = visCvs.offsetHeight;
-    const W = visCvs.width, H = visCvs.height;
-    visCtx.clearRect(0,0,W,H);
-    const bufLen = analyserNode.frequencyBinCount;
-    const data = new Uint8Array(bufLen);
-    analyserNode.getByteFrequencyData(data);
-
-    if (visStyle === 'bars') {
-      const bw = (W / bufLen) * 1.8;
-      for (let i = 0; i < bufLen; i++) {
-        const h = (data[i] / 255) * H;
-        const alpha = 0.4 + (data[i]/255)*0.6;
-        visCtx.fillStyle = `rgba(184,169,138,${alpha})`;
-        visCtx.fillRect(i * (W/bufLen), H-h, bw, h);
-      }
-    } else if (visStyle === 'wave') {
-      analyserNode.getByteTimeDomainData(data);
-      visCtx.strokeStyle = 'rgba(184,169,138,0.7)';
-      visCtx.lineWidth = 1.5;
-      visCtx.beginPath();
-      const sliceW = W / bufLen;
-      let x = 0;
-      for (let i = 0; i < bufLen; i++) {
-        const y = (data[i] / 128) * (H/2);
-        i === 0 ? visCtx.moveTo(x,y) : visCtx.lineTo(x,y);
-        x += sliceW;
-      }
-      visCtx.stroke();
-    } else if (visStyle === 'circle') {
-      analyserNode.getByteFrequencyData(data);
-      const cx = W/2, cy = H/2, r = Math.min(cx,cy)*0.5;
-      for (let i = 0; i < bufLen; i++) {
-        const angle = (i / bufLen) * Math.PI * 2 - Math.PI/2;
-        const amp = (data[i]/255) * (H*0.4);
-        visCtx.strokeStyle = `rgba(184,169,138,${0.3+data[i]/255*0.7})`;
-        visCtx.lineWidth = 1;
-        visCtx.beginPath();
-        visCtx.moveTo(cx + Math.cos(angle)*r, cy + Math.sin(angle)*r);
-        visCtx.lineTo(cx + Math.cos(angle)*(r+amp), cy + Math.sin(angle)*(r+amp));
-        visCtx.stroke();
-      }
-    }
-  }
-  loop();
-}
-
-function setVisStyle(s) {
-  visStyle = s;
-  document.querySelectorAll('[id^="vis-"]').forEach(b => b.classList.remove('active'));
-  $('vis-'+s)?.classList.add('active');
-}
-
-// ── PANEL TABS ──
-document.querySelectorAll('.ptab').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-    this.classList.add('active');
-    $('tab-'+this.dataset.tab).style.display = '';
-  });
-});
-
-// ── PANEL TOGGLE ──
-$('btn-panel').addEventListener('click', function() {
-  const panel = $('side-panel');
-  panel.classList.toggle('collapsed');
-  this.classList.toggle('active', !panel.classList.contains('collapsed'));
-});
-
-// ── FULLSCREEN ──
-$('btn-fullscreen').addEventListener('click', () => {
-  const el = $('player-wrap');
-  if (!document.fullscreenElement) {
-    el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
-  } else {
-    document.exitFullscreen?.() || document.webkitExitFullscreen?.();
-  }
-});
-
-// ── PRESETS ──
-const PRESETS = {
-  cinema:  { eq:[2,1,0,-1,-1,1,2,1], bassBoost:3, treble:2, compression:8, reverb:0.2, delayMix:0, stereoWidth:1.2, speed:1, label:'CINEMA' },
-  music:   { eq:[3,2,0,0,1,2,3,3], bassBoost:5, treble:3, compression:4, reverb:0.1, delayMix:0, stereoWidth:1.4, speed:1, label:'MUSIC' },
-  podcast: { eq:[-2,-2,1,3,3,1,0,-1], bassBoost:0, treble:1, compression:12, reverb:0, delayMix:0, stereoWidth:0.8, speed:1, label:'PODCAST' },
-  night:   { eq:[4,3,0,-2,-2,0,1,2], bassBoost:6, treble:-2, compression:6, reverb:0.3, delayMix:0, stereoWidth:1.0, speed:1, label:'NIGHT' },
-  bass:    { eq:[8,6,3,0,-1,-1,0,0], bassBoost:12, treble:0, compression:10, reverb:0.1, delayMix:0, stereoWidth:1.1, speed:1, label:'BASS HEAVY' },
-  vocal:   { eq:[-3,-2,1,4,4,3,1,-1], bassBoost:0, treble:2, compression:8, reverb:0.15, delayMix:0, stereoWidth:0.9, speed:1, label:'VOCAL BOOST' },
-  spatial: { eq:[2,1,0,0,1,2,3,2], bassBoost:2, treble:2, compression:4, reverb:0.6, delayMix:0.25, stereoWidth:1.8, speed:1, label:'SPATIAL' },
-  lofi:    { eq:[3,2,1,-1,-2,-3,-4,-5], bassBoost:4, treble:-4, compression:15, reverb:0.4, delayMix:0.1, stereoWidth:0.7, speed:0.95, label:'LO-FI' },
-  concert: { eq:[2,1,0,0,0,1,2,3], bassBoost:4, treble:2, compression:6, reverb:0.8, delayMix:0.15, stereoWidth:1.6, speed:1, label:'CONCERT' },
-  flat:    { eq:[0,0,0,0,0,0,0,0], bassBoost:0, treble:0, compression:1, reverb:0, delayMix:0, stereoWidth:1.0, speed:1, label:'FLAT' },
+const GRIDS = {
+    player: [
+        [0,1,1,1,1,0,0,0],
+        [1,3,3,3,3,1,0,0],
+        [1,1,3,1,3,1,0,0],
+        [1,3,3,3,3,1,1,0],
+        [0,1,4,4,4,1,14,1],
+        [0,1,4,4,4,1,14,1],
+        [0,1,1,0,1,1,1,0],
+        [0,1,0,0,0,1,0,0]
+    ],
+    slime: [ // Green enemy
+        [0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0],
+        [0,0,1,1,1,1,0,0],
+        [0,1,5,5,5,5,1,0],
+        [1,5,1,5,5,1,5,1],
+        [1,5,5,5,5,5,5,1],
+        [1,1,5,5,5,5,1,1],
+        [0,1,1,1,1,1,1,0]
+    ],
+    demon: [ // Red, tougher enemy
+        [0,1,0,0,0,0,1,0],
+        [1,6,1,0,0,1,6,1],
+        [1,6,6,1,1,6,6,1],
+        [1,6,7,6,6,7,6,1],
+        [1,6,6,6,6,6,6,1],
+        [1,1,2,2,2,2,1,1],
+        [0,1,6,1,1,6,1,0],
+        [0,1,1,0,0,1,1,0]
+    ],
+    wall: [
+        [1,1,1,1,1,1,1,1],
+        [1,9,9,8,8,9,8,1],
+        [1,9,8,8,8,8,8,1],
+        [1,1,1,1,1,1,1,1],
+        [1,8,8,9,9,8,8,1],
+        [1,8,8,8,9,8,8,1],
+        [1,1,1,1,1,1,1,1],
+        [1,8,9,8,8,9,8,1]
+    ],
+    floor: [
+        [10,10,10,11,10,10,10,10],
+        [10,10,10,10,10,10,10,10],
+        [10,10,10,10,10,10,11,10],
+        [11,10,10,10,10,10,10,10],
+        [10,10,10,10,10,10,10,10],
+        [10,10,11,10,10,10,10,10],
+        [10,10,10,10,10,10,10,10],
+        [10,10,10,10,11,10,10,10]
+    ],
+    doorClosed: [
+        [1,1,1,1,1,1,1,1],
+        [1,12,12,12,12,12,12,1],
+        [1,12,1,1,1,1,12,1],
+        [1,12,1,12,12,1,12,1],
+        [1,12,1,12,12,1,12,1],
+        [1,12,1,1,1,1,12,1],
+        [1,12,12,12,12,12,12,1],
+        [1,1,1,1,1,1,1,1]
+    ],
+    doorOpen: [
+        [1,1,1,1,1,1,1,1],
+        [1,12,12,0,0,12,12,1],
+        [1,12,0,0,0,0,12,1],
+        [1,12,0,0,0,0,12,1],
+        [1,12,0,0,0,0,12,1],
+        [1,12,0,0,0,0,12,1],
+        [1,12,12,0,0,12,12,1],
+        [1,1,1,1,1,1,1,1]
+    ],
+    itemHeart: [
+        [0,0,0,0,0,0,0,0],
+        [0,1,1,0,0,1,1,0],
+        [1,6,6,1,1,6,6,1],
+        [1,6,6,6,6,6,6,1],
+        [1,6,6,6,6,6,6,1],
+        [0,1,6,6,6,6,1,0],
+        [0,0,1,6,6,1,0,0],
+        [0,0,0,1,1,0,0,0]
+    ],
+    itemSword: [
+        [0,0,0,0,0,0,1,1],
+        [0,0,0,0,0,1,14,1],
+        [0,0,0,0,1,14,1,0],
+        [0,0,0,1,14,1,0,0],
+        [0,1,1,1,1,0,0,0],
+        [0,1,13,1,0,0,0,0],
+        [1,13,1,0,0,0,0,0],
+        [1,1,0,0,0,0,0,0]
+    ],
+    itemBoot: [
+        [0,0,0,0,0,0,0,0],
+        [0,0,1,1,1,0,0,0],
+        [0,0,1,4,1,0,0,0],
+        [0,0,1,4,1,0,0,0],
+        [0,0,1,4,1,1,0,0],
+        [0,1,4,4,4,4,1,0],
+        [0,1,13,13,13,13,1,0],
+        [0,1,1,1,1,1,1,0]
+    ],
+    chestClosed: [
+        [0,1,1,1,1,1,1,0],
+        [1,13,13,13,13,13,13,1],
+        [1,13,7,13,13,7,13,1],
+        [1,1,1,1,1,1,1,1],
+        [1,13,13,13,13,13,13,1],
+        [1,13,13,13,13,13,13,1],
+        [1,13,13,13,13,13,13,1],
+        [0,1,1,1,1,1,1,0]
+    ],
+    chestOpen: [
+        [1,13,13,13,13,13,13,1],
+        [13,0,0,0,0,0,0,13],
+        [13,0,0,0,0,0,0,13],
+        [1,1,1,1,1,1,1,1],
+        [1,13,13,13,13,13,13,1],
+        [1,13,7,13,13,7,13,1],
+        [1,13,13,13,13,13,13,1],
+        [0,1,1,1,1,1,1,0]
+    ]
 };
 
-function applyPreset(name) {
-  const p = PRESETS[name]; if (!p) return;
-  document.querySelectorAll('#tab-presets .preset-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('#tab-presets .preset-btn').forEach(b => { if (b.getAttribute('onclick') === `applyPreset('${name}')`) b.classList.add('active'); });
 
-  document.querySelectorAll('.eq-band').forEach((el, i) => {
-    el.value = p.eq[i];
-    if (eqNodes[i]) eqNodes[i].gain.value = p.eq[i];
-  });
 
-  setSlider('bass-boost', p.bassBoost, 'bass-boost-val', '', v => { if (bassBoostNode) bassBoostNode.gain.value = v; });
-  setSlider('treble', p.treble, 'treble-val', '', v => { if (trebleNode) trebleNode.gain.value = v; });
-  setSlider('compression', p.compression, 'compression-val', '', v => { if (dynamicsCompressor) dynamicsCompressor.ratio.value = v; });
-  setSlider('reverb', p.reverb, 'reverb-val', '', v => { if (reverbGainNode) reverbGainNode.gain.value = v; });
-  setSlider('delay-mix', p.delayMix, 'delay-mix-val', '', v => { if (delayGainNode) delayGainNode.gain.value = v; });
-  setSlider('stereo-width', p.stereoWidth, 'stereo-width-val', '', () => {});
-  setSlider('playback-speed', p.speed, 'playback-speed-val', '×', () => syncPlaybackSpeed());
 
-  activePreset = p.label;
-  $('preset-label').textContent = p.label;
-  toast('Preset: ' + p.label);
+
+
+
+/**
+ * ---------------------------------------------------------
+ * 2. ENGINE & RENDERING (Pre-rendering for 60 FPS)
+ * ---------------------------------------------------------
+ */
+const TILE_SIZE = 32;
+const PIXEL_SCALE = TILE_SIZE / 8;
+const CANVAS_WIDTH = 640;
+const CANVAS_HEIGHT = 480;
+const COLS = CANVAS_WIDTH / TILE_SIZE;
+const ROWS = CANVAS_HEIGHT / TILE_SIZE;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+// Pre-render grids to off-screen canvases for massive performance boost on iPads
+const Textures = {};
+function initTextures() {
+    for (let key in GRIDS) {
+        const grid = GRIDS[key];
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = TILE_SIZE;
+        offCanvas.height = TILE_SIZE;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.imageSmoothingEnabled = false;
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const colorIdx = grid[r][c];
+                if (colorIdx !== 0) {
+                    offCtx.fillStyle = PALETTE[colorIdx];
+                    offCtx.fillRect(c * PIXEL_SCALE, r * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+                }
+            }
+        }
+        Textures[key] = offCanvas;
+    }
 }
+initTextures();
 
-const VIS_PRESETS = {
-  dark:  { brightness:0.7, contrast:1.3, saturation:0.8, warmth:0.0 },
-  warm:  { brightness:1.0, contrast:1.1, saturation:1.2, warmth:0.2 },
-  vivid: { brightness:1.1, contrast:1.3, saturation:1.8, warmth:0.0 },
-  cool:  { brightness:1.0, contrast:1.1, saturation:1.0, warmth:-0.2 },
-  noir:  { brightness:0.9, contrast:1.6, saturation:0.0, warmth:0.0 },
-  clear: { brightness:1.0, contrast:1.0, saturation:1.0, warmth:0.0 },
+/**
+ * ---------------------------------------------------------
+ * VFX ENGINE
+ * Custom particle / effect system. All effects live here.
+ * ---------------------------------------------------------
+ */
+const VFX = {
+    particles: [],
+
+    // Spawn a single floating damage number
+    spawnDamageNumber(x, y, value, color) {
+        this.particles.push({
+            type: 'dmgnum',
+            x, y,
+            vy: -1.8,
+            life: 40, maxLife: 40,
+            value: value.toString(),
+            color: color || '#ffffff'
+        });
+    },
+
+    // Spawn dust puff (small square pixel particles)
+    spawnDust(x, y, count, color) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 1 + Math.random() * 2.5;
+            this.particles.push({
+                type: 'dust',
+                x: x + (Math.random() - 0.5) * 8,
+                y: y + (Math.random() - 0.5) * 8,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd,
+                life: 20 + Math.floor(Math.random() * 15),
+                maxLife: 35,
+                size: 3 + Math.floor(Math.random() * 3),
+                color: color || '#ffffff'
+            });
+        }
+    },
+
+    // Spawn a sword slash arc (directional sweep)
+    spawnSlash(cx, cy, dirX, dirY) {
+        const perpX = -dirY;
+        const perpY = dirX;
+        const count = 7;
+        for (let i = 0; i < count; i++) {
+            const t = (i / (count - 1)) - 0.5; // -0.5 to 0.5
+            const ox = dirX * 22 + perpX * t * 30;
+            const oy = dirY * 22 + perpY * t * 30;
+            this.particles.push({
+                type: 'slash',
+                x: cx + ox,
+                y: cy + oy,
+                vx: dirX * 3 + perpX * t * 1.5,
+                vy: dirY * 3 + perpY * t * 1.5,
+                life: 10 + i,
+                maxLife: 14,
+                size: 4 - Math.abs(t) * 2,
+                color: i % 2 === 0 ? '#ffffff' : '#ffe870'
+            });
+        }
+    },
+
+    // Spawn enemy death explosion: 6 texture chunks that fly outward + fade
+    spawnDeathChunks(ex, ey, ew, eh, texture) {
+        const cols = 3, rows = 2;
+        const cw = ew / cols;
+        const ch = eh / rows;
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const angle = Math.atan2(row - 0.5, col - 1) + (Math.random() - 0.5) * 0.5;
+                const spd = 1.0 + Math.random() * 0.8;
+                const snap = document.createElement('canvas');
+                snap.width = Math.ceil(cw);
+                snap.height = Math.ceil(ch);
+                const sCtx = snap.getContext('2d');
+                sCtx.imageSmoothingEnabled = false;
+                sCtx.drawImage(texture,
+                    col * cw, row * ch, cw, ch,
+                    0, 0, snap.width, snap.height
+                );
+                this.particles.push({
+                    type: 'chunk',
+                    x: ex + col * cw,
+                    y: ey + row * ch,
+                    vx: Math.cos(angle) * spd,
+                    vy: Math.sin(angle) * spd - 0.4,
+                    rot: (Math.random() - 0.5) * 0.15,
+                    rotSpeed: (Math.random() - 0.5) * 0.08,
+                    life: 40 + Math.floor(Math.random() * 10),
+                    maxLife: 50,
+                    w: snap.width,
+                    h: snap.height,
+                    img: snap,
+                    gravity: 0.06
+                });
+            }
+        }
+        const dustColor = texture === Textures.slime ? '#2ecc71' : '#e74c3c';
+        this.spawnDust(ex + ew / 2, ey + eh / 2, 6, dustColor);
+    },
+
+    // Spawn a flash ring (death flash)
+    spawnDeathFlash(cx, cy, color) {
+        this.particles.push({
+            type: 'ring',
+            x: cx, y: cy,
+            life: 18, maxLife: 18,
+            radius: 4,
+            color: color || '#ffffff'
+        });
+    },
+
+    // Spawn item pickup burst at a fixed world position (called after item is removed)
+    spawnPickup(cx, cy, color) {
+        const c = color || '#f1c40f';
+        for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2;
+            const spd = 2.5 + Math.random() * 1.5;
+            this.particles.push({
+                type: 'dust',
+                x: cx,
+                y: cy,
+                vx: Math.cos(angle) * spd,
+                vy: Math.sin(angle) * spd - 0.5,
+                life: 14,
+                maxLife: 14,
+                size: 3,
+                color: c
+            });
+        }
+    },
+
+    // Spawn chest item throw arc: item image arcs out and lands
+    spawnChestThrow(cx, cy, tex, itemType, rarity) {
+        const angle = -Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.8;
+        const spd = 2.5 + Math.random() * 1.5;
+        this.particles.push({
+            type: 'itemthrow',
+            x: cx, y: cy,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd - 1,
+            life: 50, maxLife: 50,
+            gravity: 0.14,
+            tex: tex,
+            itemType: itemType,
+            itemRarity: rarity || 'common',
+            landed: false
+        });
+    },
+
+    update() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.life--;
+            if (p.life <= 0) {
+                // When a thrown item lands and its particle expires, spawn a real item
+                if (p.type === 'itemthrow' && p.landed) {
+                    items.push(new Item(p.x - 11, p.y - 11, p.itemType, p.itemRarity));
+                }
+                this.particles.splice(i, 1);
+                continue;
+            }
+
+            if (p.type === 'dust' || p.type === 'slash') {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vx *= 0.88;
+                p.vy *= 0.88;
+            } else if (p.type === 'dmgnum') {
+                p.y += p.vy;
+                p.vy *= 0.94;
+            } else if (p.type === 'chunk') {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.vx *= 0.92;
+                p.rot += p.rotSpeed;
+            } else if (p.type === 'ring') {
+                p.radius += 4;
+            } else if (p.type === 'itemthrow') {
+                if (!p.landed) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.vx *= 0.97;
+                    // Land when moving down and near floor
+                    if (p.vy > 0.5 && p.life < 35) {
+                        p.landed = true;
+                        p.vx = 0;
+                        p.vy = 0;
+                        p.life = 8; // Short linger then become real item
+                    }
+                }
+            }
+        }
+    },
+
+    draw() {
+        for (const p of this.particles) {
+            const alpha = p.life / p.maxLife;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            if (p.type === 'dust') {
+                ctx.fillStyle = p.color;
+                // Pixelated square
+                ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+
+            } else if (p.type === 'slash') {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
+
+            } else if (p.type === 'dmgnum') {
+                ctx.font = 'bold 10px "Courier New"';
+                ctx.imageSmoothingEnabled = false;
+                ctx.fillStyle = '#000';
+                ctx.fillText(p.value, Math.round(p.x) + 1, Math.round(p.y) + 1);
+                ctx.fillStyle = p.color;
+                ctx.fillText(p.value, Math.round(p.x), Math.round(p.y));
+
+            } else if (p.type === 'chunk') {
+                ctx.translate(Math.round(p.x + p.w / 2), Math.round(p.y + p.h / 2));
+                ctx.rotate(p.rot);
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(p.img, -p.w / 2, -p.h / 2, p.w, p.h);
+
+            } else if (p.type === 'ring') {
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 3;
+                ctx.globalAlpha = alpha * 0.7;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.stroke();
+
+            } else if (p.type === 'itemthrow') {
+                ctx.imageSmoothingEnabled = false;
+                ctx.globalAlpha = p.landed ? alpha : 1;
+                ctx.drawImage(p.tex, Math.round(p.x - 11), Math.round(p.y - 11), 22, 22);
+            }
+
+            ctx.restore();
+        }
+    }
 };
 
-function applyVisPreset(name) {
-  const p = VIS_PRESETS[name]; if (!p) return;
-  setSlider('v-brightness', p.brightness, 'v-brightness-val', '', () => {});
-  setSlider('v-contrast', p.contrast, 'v-contrast-val', '', () => {});
-  setSlider('v-saturation', p.saturation, 'v-saturation-val', '', () => {});
-  setSlider('v-warmth', p.warmth, 'v-warmth-val', '', () => {});
-  applyVideoFilter();
-  toast('Visual: ' + name.charAt(0).toUpperCase() + name.slice(1));
+/**
+ * ---------------------------------------------------------
+ * 3. GAME STATE & ENTITIES
+ * ---------------------------------------------------------
+ */
+const Input = { up: false, down: false, left: false, right: false, attack: false };
+
+// Item rarity tiers: common, uncommon, rare, legendary
+const RARITY = {
+    common:    { color: '#aaaaaa', glowColor: null,      label: 'COMMON'    },
+    uncommon:  { color: '#2ecc71', glowColor: '#2ecc71', label: 'UNCOMMON'  },
+    rare:      { color: '#3498db', glowColor: '#3498db', label: 'RARE'      },
+    legendary: { color: '#f39c12', glowColor: '#f39c12', label: 'LEGENDARY' }
+};
+
+// Roll a rarity based on room depth
+function rollRarity() {
+    const r = Math.random();
+    if (r < 0.05 + currentRoom * 0.003) return 'legendary';
+    if (r < 0.15 + currentRoom * 0.005) return 'rare';
+    if (r < 0.40) return 'uncommon';
+    return 'common';
 }
 
-function setSlider(id, val, valId, suffix, cb) {
-  const el = $(id); if (!el) return;
-  el.value = val;
-  const str = typeof val === 'number' ? (suffix === '×' ? val.toFixed(2)+suffix : val.toFixed(suffix===''&&Number.isInteger(val)?0:2)) : val;
-  $(valId).textContent = str;
-  cb(val);
+let currentRoom = 1;
+let score = 0;
+let roomMap = []; // 2D array: 1 for wall, 0 for floor, 2 for door
+let enemies = [];
+let items = [];
+let chest = null; // One chest per cleared room
+let doorsOpen = false;
+
+// Used to shake the screen when hit
+let screenShake = 0; 
+
+class Player {
+    constructor() {
+        this.width = TILE_SIZE - 4; // slight bounding box reduction
+        this.height = TILE_SIZE - 4;
+        this.x = CANVAS_WIDTH / 2 - this.width / 2;
+        this.y = CANVAS_HEIGHT / 2 - this.height / 2;
+        
+        this.maxHp = 100;
+        this.hp = 100;
+        this.speed = 4.0;
+        this.dmg = 20;
+        
+        this.dir = { x: 1, y: 0 }; // Used for attack direction
+        this.isAttacking = false;
+        this.attackTimer = 0;
+        this.iFrames = 0;
+    }
+
+    update() {
+        if (this.iFrames > 0) this.iFrames--;
+
+        let dx = 0;
+        let dy = 0;
+
+        if (Input.up) dy -= this.speed;
+        if (Input.down) dy += this.speed;
+        if (Input.left) dx -= this.speed;
+        if (Input.right) dx += this.speed;
+
+        // Normalize diagonal movement speed
+        if (dx !== 0 && dy !== 0) {
+            dx *= 0.707;
+            dy *= 0.707;
+        }
+
+        if (dx !== 0 || dy !== 0) {
+            // Update direction for attacks
+            if (Math.abs(dx) > Math.abs(dy)) {
+                this.dir = { x: dx > 0 ? 1 : -1, y: 0 };
+            } else {
+                this.dir = { x: 0, y: dy > 0 ? 1 : -1 };
+            }
+        }
+
+        // Move X & Check Collision
+        this.x += dx;
+        if (this.checkWallCollision()) {
+            this.x -= dx;
+        }
+
+        // Move Y & Check Collision
+        this.y += dy;
+        if (this.checkWallCollision()) {
+            this.y -= dy;
+        }
+
+        // Keep bounds
+        this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
+        this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
+
+        // Attack Logic
+        if (Input.attack && this.attackTimer === 0) {
+            this.isAttacking = true;
+            this.attackTimer = 20; // Attack cooldown
+            this.processAttack();
+        }
+
+        if (this.attackTimer > 0) {
+            this.attackTimer--;
+            if (this.attackTimer < 10) this.isAttacking = false;
+        }
+
+        // Check Door Transitions
+        if (doorsOpen) {
+            const centerX = this.x + this.width/2;
+            const centerY = this.y + this.height/2;
+            const tileX = Math.floor(centerX / TILE_SIZE);
+            const tileY = Math.floor(centerY / TILE_SIZE);
+
+            if (roomMap[tileY] && roomMap[tileY][tileX] === 2) {
+                nextRoom(tileX, tileY);
+            }
+        }
+    }
+
+    checkWallCollision() {
+        // Check 4 corners of bounding box against room map
+        const corners = [
+            {x: this.x + 2, y: this.y + 2},
+            {x: this.x + this.width - 2, y: this.y + 2},
+            {x: this.x + 2, y: this.y + this.height - 2},
+            {x: this.x + this.width - 2, y: this.y + this.height - 2}
+        ];
+        
+        for (let p of corners) {
+            const tx = Math.floor(p.x / TILE_SIZE);
+            const ty = Math.floor(p.y / TILE_SIZE);
+            if (roomMap[ty] && roomMap[ty][tx] === 1) return true; // 1 is Wall
+            // 2 is door, if doors are closed act like a wall
+            if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
+        }
+        return false;
+    }
+
+    processAttack() {
+        // Create hitbox in front of player
+        const range = 40;
+        let hx = this.x + this.width/2 + (this.dir.x * range) - 20;
+        let hy = this.y + this.height/2 + (this.dir.y * range) - 20;
+        let hw = 40;
+        let hh = 40;
+
+        // Slash VFX
+        VFX.spawnSlash(
+            this.x + this.width / 2 + this.dir.x * 28,
+            this.y + this.height / 2 + this.dir.y * 28,
+            this.dir.x, this.dir.y
+        );
+
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            if (hx < e.x + e.width && hx + hw > e.x &&
+                hy < e.y + e.height && hy + hh > e.y) {
+
+                e.hp -= this.dmg;
+
+                // Knockback
+                e.x += this.dir.x * 20;
+                e.y += this.dir.y * 20;
+
+                // Hit dust + damage number
+                VFX.spawnDust(e.x + e.width / 2, e.y + e.height / 2, 5, '#ffffff');
+                VFX.spawnDamageNumber(e.x + e.width / 2, e.y, this.dmg, '#ffe870');
+
+                if (e.hp <= 0) {
+                    // Death explosion: 6 texture chunks + flash ring
+                    VFX.spawnDeathChunks(e.x, e.y, e.width, e.height, e.tex);
+                    VFX.spawnDeathFlash(
+                        e.x + e.width / 2,
+                        e.y + e.height / 2,
+                        e.type === 'slime' ? '#2ecc71' : '#e74c3c'
+                    );
+                    score += e.maxHp;
+                    rollDrop(e.x, e.y);
+                    enemies.splice(i, 1);
+                    checkRoomClear();
+                }
+            }
+        }
+    }
+
+    takeDamage(amt) {
+        if (this.iFrames === 0) {
+            this.hp -= amt;
+            this.iFrames = 30; // Half a second of invincibility
+            screenShake = 10;
+            updateUI();
+            if (this.hp <= 0) {
+                gameOver();
+            }
+        }
+    }
+
+    draw() {
+        if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return; // Flash effect
+
+        // Flip horizontally based on facing direction, or just draw
+        // (For simplicity and perf on all devices, we just draw the texture)
+        ctx.drawImage(Textures.player, this.x, this.y, this.width, this.height);
+
+        if (this.type === 'heart') {
+                player.hp = Math.min(player.maxHp, player.hp + 25);
+            } else if (this.type === 'sword') {
+                player.dmg += 5;
+            } else if (this.type === 'boot') {
+                player.speed += 0.2;
+            }
+
+            VFX.spawnPickup(this.x + this.width / 2, this.y + this.height / 2);
+            score += 50;
+            updateUI();
+            return true; // Flag for deletion
+    }
 }
 
-function resetAll() {
-  applyPreset('flat');
-  applyVisPreset('clear');
-  $('playback-speed').value = 1; $('playback-speed-val').textContent = '1.00×'; syncPlaybackSpeed();
-  $('pitch-shift').value = 0; $('pitch-shift-val').textContent = '0';
-  $('preset-label').textContent = 'NO PRESET';
-  toast('Settings reset');
+class Enemy {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.width = TILE_SIZE - 6;
+        this.height = TILE_SIZE - 6;
+        this.type = type; // 'slime' or 'demon'
+        
+        // Stats scale with room level
+        const scale = 1 + (currentRoom * 0.1);
+        
+        if (type === 'slime') {
+            this.maxHp = 30 * scale;
+            this.speed = 1.5;
+            this.dmg = 10 * scale;
+            this.tex = Textures.slime;
+        } else {
+            this.maxHp = 60 * scale;
+            this.speed = 2.2;
+            this.dmg = 20 * scale;
+            this.tex = Textures.demon;
+        }
+        
+        this.hp = this.maxHp;
+    }
+
+    update() {
+        // Move towards player
+        let dx = player.x - this.x;
+        let dy = player.y - this.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 0) {
+            let vx = (dx / dist) * this.speed;
+            let vy = (dy / dist) * this.speed;
+
+            // Simple movement with wall sliding
+            this.x += vx;
+            if (this.checkWallCollision()) this.x -= vx;
+
+            this.y += vy;
+            if (this.checkWallCollision()) this.y -= vy;
+        }
+
+        // Damage Player
+        if (dist < (this.width/2 + player.width/2)) {
+            player.takeDamage(this.dmg);
+        }
+    }
+
+    checkWallCollision() {
+        const corners = [
+            {x: this.x, y: this.y},
+            {x: this.x + this.width, y: this.y},
+            {x: this.x, y: this.y + this.height},
+            {x: this.x + this.width, y: this.y + this.height}
+        ];
+        
+        for (let p of corners) {
+            const tx = Math.floor(p.x / TILE_SIZE);
+            const ty = Math.floor(p.y / TILE_SIZE);
+            if (roomMap[ty] && roomMap[ty][tx] === 1) return true; 
+            if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
+        }
+        return false;
+    }
+
+    draw() {
+        ctx.drawImage(this.tex, this.x, this.y, this.width, this.height);
+
+        // Pixel HP Bar
+        const hpPercent = Math.max(0, this.hp / this.maxHp);
+        const bx = Math.round(this.x);
+        const by = Math.round(this.y) - 9;
+        const bw = this.width;
+        // Background
+        ctx.fillStyle = '#1a0000';
+        ctx.fillRect(bx, by, bw, 5);
+        // Fill
+        const fillColor = hpPercent > 0.6 ? '#2ecc71' : hpPercent > 0.3 ? '#f1c40f' : '#e74c3c';
+        ctx.fillStyle = fillColor;
+        ctx.fillRect(bx, by, Math.round(bw * hpPercent), 5);
+        // Top shine pixel row
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fillRect(bx, by, Math.round(bw * hpPercent), 2);
+        // Border
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, 4);
+    }
 }
 
-// ── TOAST ──
-let toastTimer;
-function toast(msg) {
-  const el = $('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+class Item {
+    constructor(x, y, type, rarity) {
+        this.x = x;
+        this.y = y;
+        this.width = TILE_SIZE - 10;
+        this.height = TILE_SIZE - 10;
+        this.type = type; // 'heart', 'sword', 'boot'
+        this.rarity = rarity || 'common';
+        this.bob = Math.random() * Math.PI * 2;
+        this.glowPulse = Math.random() * Math.PI * 2;
+        // Legendary/rare items emit ambient particles over time
+        this.particleTimer = 0;
+    }
+
+    update() {
+        this.bob += 0.07;
+        this.glowPulse += 0.06;
+
+        // Rare+ items occasionally emit ambient float particles
+        const rarityData = RARITY[this.rarity];
+        if (rarityData.glowColor) {
+            this.particleTimer++;
+            const interval = this.rarity === 'legendary' ? 8 : 18;
+            if (this.particleTimer >= interval) {
+                this.particleTimer = 0;
+                VFX.particles.push({
+                    type: 'dust',
+                    x: this.x + this.width / 2 + (Math.random() - 0.5) * 8,
+                    y: this.y + this.height,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: -0.8 - Math.random() * 0.5,
+                    life: 22, maxLife: 22,
+                    size: 2,
+                    color: rarityData.glowColor
+                });
+            }
+        }
+
+        // Pick up
+        if (player.x < this.x + this.width && player.x + player.width > this.x &&
+            player.y < this.y + this.height && player.y + player.height > this.y) {
+
+            const pickX = this.x + this.width / 2;
+            const pickY = this.y + this.height / 2;
+
+            if (this.type === 'heart') {
+                player.hp = Math.min(player.maxHp, player.hp + 25);
+            } else if (this.type === 'sword') {
+                player.dmg += 5;
+            } else if (this.type === 'boot') {
+                player.speed += 0.2;
+            }
+
+            // Pickup burst fires away from the now-deleted item position
+            VFX.spawnPickup(pickX, pickY, RARITY[this.rarity].glowColor || '#ffffff');
+            score += 50;
+            updateUI();
+            return true; // Flag for deletion
+        }
+        return false;
+    }
+
+    draw() {
+        let tex = Textures.itemHeart;
+        if (this.type === 'sword') tex = Textures.itemSword;
+        if (this.type === 'boot') tex = Textures.itemBoot;
+
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+        const offsetY = Math.sin(this.bob) * 3;
+        const rarityData = RARITY[this.rarity];
+
+        // --- Rarity floor glow ---
+        if (rarityData.glowColor) {
+            const pulse = 0.55 + Math.sin(this.glowPulse) * 0.25;
+            const radius = this.rarity === 'legendary' ? 18 : 13;
+            const grad = ctx.createRadialGradient(cx, cy + offsetY, 1, cx, cy + offsetY, radius);
+            grad.addColorStop(0, rarityData.glowColor + 'bb');
+            grad.addColorStop(1, rarityData.glowColor + '00');
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy + offsetY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // --- Legendary: orbiting pixel sparks ---
+        if (this.rarity === 'legendary') {
+            const t = Date.now() / 400;
+            for (let i = 0; i < 3; i++) {
+                const a = t + (i / 3) * Math.PI * 2;
+                const ox = Math.cos(a) * 11;
+                const oy = Math.sin(a) * 6;
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                ctx.fillStyle = i % 2 === 0 ? '#f39c12' : '#fff';
+                ctx.fillRect(Math.round(cx + ox - 1), Math.round(cy + offsetY + oy - 1), 2, 2);
+                ctx.restore();
+            }
+        }
+
+        // --- Rare: corner pixel brackets ---
+        if (this.rarity === 'rare') {
+            const bx = Math.round(this.x - 2);
+            const by = Math.round(this.y + offsetY - 2);
+            const bw = this.width + 4;
+            const bh = this.height + 4;
+            ctx.save();
+            ctx.globalAlpha = 0.7 + Math.sin(this.glowPulse) * 0.2;
+            ctx.fillStyle = '#3498db';
+            // Top-left
+            ctx.fillRect(bx, by, 4, 1); ctx.fillRect(bx, by, 1, 4);
+            // Top-right
+            ctx.fillRect(bx + bw - 4, by, 4, 1); ctx.fillRect(bx + bw - 1, by, 1, 4);
+            // Bottom-left
+            ctx.fillRect(bx, by + bh - 1, 4, 1); ctx.fillRect(bx, by + bh - 4, 1, 4);
+            // Bottom-right
+            ctx.fillRect(bx + bw - 4, by + bh - 1, 4, 1); ctx.fillRect(bx + bw - 1, by + bh - 4, 1, 4);
+            ctx.restore();
+        }
+
+        // --- Uncommon: small pixel underline shimmer ---
+        if (this.rarity === 'uncommon') {
+            const shimmer = 0.5 + Math.sin(this.glowPulse * 1.5) * 0.3;
+            ctx.save();
+            ctx.globalAlpha = shimmer;
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(Math.round(this.x), Math.round(this.y + offsetY + this.height + 2), this.width, 2);
+            ctx.restore();
+        }
+
+        // Draw item texture
+        ctx.drawImage(tex, this.x, Math.round(this.y + offsetY), this.width, this.height);
+    }
 }
 
-// ── SETTINGS BTN ──
-$('btn-settings').addEventListener('click', () => {
-  document.querySelectorAll('.ptab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
-  document.querySelector('[data-tab="settings"]').classList.add('active');
-  $('tab-settings').style.display = '';
-  const panel = $('side-panel');
-  if (panel.classList.contains('collapsed')) { panel.classList.remove('collapsed'); $('btn-panel').classList.add('active'); }
+class Chest {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = TILE_SIZE;
+        this.height = TILE_SIZE;
+        this.opened = false;
+        this.bob = 0;
+        this.openTimer = 0; // frames since opened, drives animation
+        this.glowPulse = 0;
+    }
+
+    update() {
+        this.glowPulse += 0.05;
+        if (!this.opened) {
+            this.bob = Math.sin(Date.now() / 500) * 1.5;
+            // Check player proximity to open
+            const cx = this.x + this.width / 2;
+            const cy = this.y + this.height / 2;
+            const px = player.x + player.width / 2;
+            const py = player.y + player.height / 2;
+            const dist = Math.sqrt((cx - px) ** 2 + (cy - py) ** 2);
+            if (dist < 28) {
+                this.open();
+            }
+        } else {
+            this.openTimer++;
+        }
+    }
+
+    open() {
+        if (this.opened) return;
+        this.opened = true;
+        screenShake = 5;
+
+        // Throw 2-3 items out of the chest with rarity rolls
+        const count = 2 + Math.floor(Math.random() * 2);
+        const types = ['heart', 'sword', 'boot'];
+        for (let i = 0; i < count; i++) {
+            const type = types[Math.floor(Math.random() * types.length)];
+            const rarity = rollRarity();
+            let tex = Textures.itemHeart;
+            if (type === 'sword') tex = Textures.itemSword;
+            if (type === 'boot') tex = Textures.itemBoot;
+            // Stagger throws slightly
+            setTimeout(() => {
+                VFX.spawnChestThrow(
+                    this.x + this.width / 2,
+                    this.y + this.height / 2,
+                    tex, type, rarity
+                );
+            }, i * 120);
+        }
+
+        // Gold dust burst
+        VFX.spawnDust(this.x + this.width / 2, this.y + this.height / 2, 12, '#f1c40f');
+        VFX.spawnDeathFlash(this.x + this.width / 2, this.y + this.height / 2, '#f1c40f');
+    }
+
+    draw() {
+        const tex = this.opened ? Textures.chestOpen : Textures.chestClosed;
+        const offsetY = this.opened ? 0 : this.bob;
+
+        // Glow under chest
+        if (!this.opened) {
+            const cx = this.x + this.width / 2;
+            const cy = this.y + this.height / 2;
+            const pulse = 0.4 + Math.sin(this.glowPulse) * 0.2;
+            const grad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 20);
+            grad.addColorStop(0, '#f1c40f88');
+            grad.addColorStop(1, '#f1c40f00');
+            ctx.save();
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        ctx.drawImage(tex, this.x, Math.round(this.y + offsetY), this.width, this.height);
+    }
+}
+
+let player = new Player();
+
+/**
+ * ---------------------------------------------------------
+ * 4. ROOM GENERATION (Infinite Rogue-like algorithm)
+ * ---------------------------------------------------------
+ */
+function generateRoomMap() {
+    roomMap = [];
+    for (let y = 0; y < ROWS; y++) {
+        let row = [];
+        for (let x = 0; x < COLS; x++) {
+            // Edges are walls (1)
+            if (x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1) {
+                row.push(1);
+            } else {
+                row.push(0); // Floor
+            }
+        }
+        roomMap.push(row);
+    }
+
+    // Add doors (2) roughly in the middle of each wall
+    roomMap[0][Math.floor(COLS/2)] = 2; // Top
+    roomMap[ROWS-1][Math.floor(COLS/2)] = 2; // Bottom
+    roomMap[Math.floor(ROWS/2)][0] = 2; // Left
+    roomMap[Math.floor(ROWS/2)][COLS-1] = 2; // Right
+
+    // Optional: Add some random inner pillars
+    const pillars = Math.floor(Math.random() * 4);
+    for(let i=0; i<pillars; i++) {
+        let px = 2 + Math.floor(Math.random()*(COLS-4));
+        let py = 2 + Math.floor(Math.random()*(ROWS-4));
+        roomMap[py][px] = 1;
+    }
+}
+
+function spawnEnemies() {
+    enemies = [];
+    items = [];
+    chest = null;
+    doorsOpen = false;
+
+    // Number of enemies scales with room
+    let count = Math.min(15, 2 + Math.floor(currentRoom / 2));
+    
+    for (let i = 0; i < count; i++) {
+        // Find empty spawn spot
+        let ex = 0, ey = 0, valid = false;
+        while (!valid) {
+            let tx = 1 + Math.floor(Math.random()*(COLS-2));
+            let ty = 1 + Math.floor(Math.random()*(ROWS-2));
+            if (roomMap[ty][tx] === 0) { // Walkable
+                ex = tx * TILE_SIZE;
+                ey = ty * TILE_SIZE;
+                
+                // Don't spawn on top of player
+                if (Math.abs(ex - player.x) > 100 || Math.abs(ey - player.y) > 100) {
+                    valid = true;
+                }
+            }
+        }
+
+        // Spawn logic
+        let type = 'slime';
+        if (currentRoom > 3 && Math.random() < 0.3) type = 'demon';
+        if (currentRoom > 10 && Math.random() < 0.6) type = 'demon';
+
+        enemies.push(new Enemy(ex, ey, type));
+    }
+}
+
+function rollDrop(x, y) {
+    // 30% chance to drop item
+    if (Math.random() < 0.3) {
+        const rand = Math.random();
+        let type = 'heart';
+        if (rand > 0.6 && rand <= 0.8) type = 'sword';
+        if (rand > 0.8) type = 'boot';
+        items.push(new Item(x, y, type));
+    }
+}
+
+function checkRoomClear() {
+    if (enemies.length === 0) {
+        doorsOpen = true;
+        // Spawn a chest in the center of the room
+        const cx = Math.floor(COLS / 2) * TILE_SIZE;
+        const cy = Math.floor(ROWS / 2) * TILE_SIZE;
+        chest = new Chest(cx, cy);
+    }
+}
+
+function nextRoom(exitTx, exitTy) {
+    currentRoom++;
+    generateRoomMap();
+    spawnEnemies();
+    
+    // Position player at opposite door
+    if (exitTy === 0) { // Exited top -> Enter bottom
+        player.y = (ROWS - 2) * TILE_SIZE;
+        player.x = exitTx * TILE_SIZE;
+    } else if (exitTy === ROWS - 1) { // Exited bottom -> Enter top
+        player.y = 1 * TILE_SIZE;
+        player.x = exitTx * TILE_SIZE;
+    } else if (exitTx === 0) { // Exited left -> Enter right
+        player.x = (COLS - 2) * TILE_SIZE;
+        player.y = exitTy * TILE_SIZE;
+    } else if (exitTx === COLS - 1) { // Exited right -> Enter left
+        player.x = 1 * TILE_SIZE;
+        player.y = exitTy * TILE_SIZE;
+    }
+
+    updateUI();
+}
+
+/**
+ * ---------------------------------------------------------
+ * 5. CONTROLS (iPad Touch & Keyboard)
+ * ---------------------------------------------------------
+ */
+// Keyboard for testing
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'w' || e.key === 'ArrowUp') Input.up = true;
+    if (e.key === 's' || e.key === 'ArrowDown') Input.down = true;
+    if (e.key === 'a' || e.key === 'ArrowLeft') Input.left = true;
+    if (e.key === 'd' || e.key === 'ArrowRight') Input.right = true;
+    if (e.key === ' ' || e.key === 'Enter') Input.attack = true;
+});
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'w' || e.key === 'ArrowUp') Input.up = false;
+    if (e.key === 's' || e.key === 'ArrowDown') Input.down = false;
+    if (e.key === 'a' || e.key === 'ArrowLeft') Input.left = false;
+    if (e.key === 'd' || e.key === 'ArrowRight') Input.right = false;
+    if (e.key === ' ' || e.key === 'Enter') Input.attack = false;
 });
 
-// ── RESIZE ──
-window.addEventListener('resize', drawOverlay);
+// Touch controls for iPad
+function bindTouch(btnId, keyName) {
+    const btn = document.getElementById(btnId);
+    
+    const press = (e) => { e.preventDefault(); Input[keyName] = true; };
+    const release = (e) => { e.preventDefault(); Input[keyName] = false; };
 
-// ── WAKE LOCK ──
-if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(()=>{});
+    // Support both Touch (iPad) and Mouse (PC clicking the UI)
+    btn.addEventListener('touchstart', press, {passive: false});
+    btn.addEventListener('touchend', release, {passive: false});
+    btn.addEventListener('mousedown', press);
+    btn.addEventListener('mouseup', release);
+    btn.addEventListener('mouseleave', release);
+}
 
-// ── INIT ──
-startVisLoop();
-  </script>
+bindTouch('btn-up', 'up');
+bindTouch('btn-down', 'down');
+bindTouch('btn-left', 'left');
+bindTouch('btn-right', 'right');
+bindTouch('btn-attack', 'attack');
+
+
+/**
+ * ---------------------------------------------------------
+ * 6. GAME LOOP & RENDER
+ * ---------------------------------------------------------
+ */
+let isGameOver = false;
+
+function updateUI() {
+    const hp = Math.floor(player.hp);
+    const maxHp = player.maxHp;
+    document.getElementById('ui-hp').innerText = hp;
+    document.getElementById('ui-maxhp').innerText = maxHp;
+    document.getElementById('ui-dmg').innerText = player.dmg;
+    document.getElementById('ui-spd').innerText = player.speed.toFixed(1);
+    document.getElementById('ui-room').innerText = currentRoom;
+    document.getElementById('ui-score').innerText = score;
+
+    // Update pixel HP bar
+    const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
+    const bar = document.getElementById('ui-hp-bar');
+    bar.style.width = pct + '%';
+    bar.className = 'hp-bar-inner ' + (pct > 60 ? 'high' : pct > 30 ? 'mid' : 'low');
+}
+
+function gameOver() {
+    isGameOver = true;
+    document.getElementById('game-over').style.display = 'block';
+    document.getElementById('go-rooms').innerText = currentRoom - 1;
+}
+
+function drawMap() {
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            let px = x * TILE_SIZE;
+            let py = y * TILE_SIZE;
+            let val = roomMap[y][x];
+
+            if (val === 0) {
+                ctx.drawImage(Textures.floor, px, py);
+
+                // Subtle shadow cast down/right from adjacent walls
+                const wallAbove = roomMap[y - 1] && roomMap[y - 1][x] === 1;
+                const wallLeft  = roomMap[y][x - 1] === 1;
+                if (wallAbove) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+                    ctx.fillRect(px, py, TILE_SIZE, 7);
+                }
+                if (wallLeft) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                    ctx.fillRect(px, py, 5, TILE_SIZE);
+                }
+
+            } else if (val === 1) {
+                ctx.drawImage(Textures.wall, px, py);
+
+                // Top-edge highlight on walls to give depth
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                ctx.fillRect(px, py, TILE_SIZE, 2);
+
+            } else if (val === 2) {
+                if (doorsOpen) {
+                    ctx.drawImage(Textures.doorOpen, px, py);
+                    // Soft glow tint on open door
+                    ctx.fillStyle = 'rgba(142,68,173,0.15)';
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                } else {
+                    ctx.drawImage(Textures.doorClosed, px, py);
+                }
+            }
+        }
+    }
+}
+
+function loop() {
+    if (isGameOver) return;
+
+    // Update Phase
+    player.update();
+    enemies.forEach(e => e.update());
+    
+    // Process Items and filter out collected ones
+    items = items.filter(i => !i.update());
+
+    // Update chest
+    if (chest) chest.update();
+
+    // Screen Shake Logic
+    ctx.save();
+    if (screenShake > 0) {
+        let sx = (Math.random() - 0.5) * screenShake;
+        let sy = (Math.random() - 0.5) * screenShake;
+        ctx.translate(sx, sy);
+        screenShake -= 1;
+    }
+
+    // VFX Update
+    VFX.update();
+
+    // Render Phase
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    drawMap();
+    if (chest) chest.draw();
+    items.forEach(i => i.draw());
+    enemies.forEach(e => e.draw());
+    player.draw();
+    VFX.draw();
+
+    ctx.restore(); // Undo screen shake translation
+
+    requestAnimationFrame(loop);
+}
+
+// Initialize
+generateRoomMap();
+spawnEnemies();
+updateUI();
+requestAnimationFrame(loop);
+
+    </script>
 </body>
 
 </html>
