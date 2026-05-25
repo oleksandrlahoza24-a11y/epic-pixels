@@ -527,7 +527,15 @@ const PALETTE = [
     '#34495e',  // 11: Floor Highlight
     '#8e44ad',  // 12: Magic Door
     '#d35400',  // 13: Wood / Sword Hilt
-    '#bdc3c7'   // 14: Metal / Sword Blade
+    '#bdc3c7',  // 14: Metal / Sword Blade
+    '#95a5a6',  // 15: Shield Silver
+    '#9b59b6',  // 16: Purple Orb
+    '#d2b4de',  // 17: Orb Highlight
+    '#cce5ff',  // 18: Ice Floor
+    '#e8f4fd',  // 19: Ice Highlight
+    '#c0392b',  // 20: Lava Floor
+    '#e74c3c',  // 21: Lava Bright
+    '#922b21'   // 22: Lava Wall Dark
 ];
 
 const GRIDS = {
@@ -650,8 +658,110 @@ const GRIDS = {
         [1,13,7,13,13,7,13,1],
         [1,13,13,13,13,13,13,1],
         [0,1,1,1,1,1,1,0]
+    ],
+    // --- NEW UPGRADE TEXTURES (richer pixel art) ---
+    itemShield: [  // Armour upgrade: max HP +20
+        [0,0,1,1,1,1,0,0],
+        [0,1,15,15,15,15,1,0],
+        [1,15,2,15,15,2,15,1],
+        [1,15,15,15,15,15,15,1],
+        [1,15,15,15,15,15,15,1],
+        [0,1,15,7,7,15,1,0],
+        [0,0,1,15,15,1,0,0],
+        [0,0,0,1,1,0,0,0]
+    ],
+    itemOrb: [    // Magic orb: fire projectile upgrade
+        [0,0,1,1,1,1,0,0],
+        [0,1,16,16,16,16,1,0],
+        [1,16,2,16,16,2,16,1],
+        [1,16,16,17,17,16,16,1],
+        [1,16,17,17,17,17,16,1],
+        [0,1,16,16,16,16,1,0],
+        [0,0,1,16,16,1,0,0],
+        [0,0,0,1,1,0,0,0]
+    ],
+    itemKey: [    // Key: unlocks a bonus room
+        [0,0,0,1,1,1,0,0],
+        [0,0,1,7,7,7,1,0],
+        [0,0,1,7,0,7,1,0],
+        [0,0,1,7,7,7,1,0],
+        [0,0,0,1,1,0,0,0],
+        [0,0,0,1,0,0,0,0],
+        [0,0,1,1,1,0,0,0],
+        [0,0,0,1,0,0,0,0]
+    ],
+    // --- NEW ENEMY TEXTURES ---
+    skeleton: [  // Room 5+: fast, low HP
+        [0,1,1,1,1,1,1,0],
+        [1,2,1,1,1,1,2,1],
+        [1,2,2,1,1,2,2,1],
+        [1,2,7,2,2,7,2,1],
+        [1,2,2,2,2,2,2,1],
+        [0,1,2,1,1,2,1,0],
+        [0,1,2,2,2,2,1,0],
+        [0,1,1,0,0,1,1,0]
+    ],
+    golem: [     // Room 8+: slow, very high HP
+        [1,1,8,8,8,8,1,1],
+        [1,8,9,8,8,9,8,1],
+        [8,8,7,8,8,7,8,8],
+        [8,8,8,8,8,8,8,8],
+        [8,8,8,8,8,8,8,8],
+        [1,8,8,9,9,8,8,1],
+        [1,8,8,8,8,8,8,1],
+        [1,1,1,8,8,1,1,1]
+    ],
+    // --- NEW ROOM TILE TEXTURES ---
+    floorIce: [   // Ice room floor
+        [18,18,18,19,18,18,18,18],
+        [18,19,18,18,18,18,19,18],
+        [18,18,18,18,18,18,18,18],
+        [19,18,18,18,18,19,18,18],
+        [18,18,18,18,18,18,18,18],
+        [18,18,19,18,18,18,18,19],
+        [18,18,18,18,19,18,18,18],
+        [18,19,18,18,18,18,18,18]
+    ],
+    floorLava: [  // Lava room floor
+        [20,20,21,20,20,20,21,20],
+        [20,21,20,20,21,20,20,20],
+        [21,20,20,20,20,20,20,21],
+        [20,20,20,21,20,20,21,20],
+        [20,20,21,20,20,21,20,20],
+        [20,21,20,20,20,20,20,20],
+        [20,20,20,21,20,20,20,21],
+        [21,20,20,20,20,21,20,20]
+    ],
+    wallIce: [
+        [1,1,1,1,1,1,1,1],
+        [1,18,19,18,18,19,18,1],
+        [1,19,18,18,18,18,19,1],
+        [1,1,1,1,1,1,1,1],
+        [1,18,18,19,19,18,18,1],
+        [1,18,19,18,18,19,18,1],
+        [1,1,1,1,1,1,1,1],
+        [1,18,18,18,18,18,18,1]
+    ],
+    wallLava: [
+        [1,1,1,1,1,1,1,1],
+        [1,22,22,20,20,22,20,1],
+        [1,22,20,20,20,20,20,1],
+        [1,1,1,1,1,1,1,1],
+        [1,20,20,22,22,20,20,1],
+        [1,20,20,20,22,20,20,1],
+        [1,1,1,1,1,1,1,1],
+        [1,20,22,20,20,22,20,1]
     ]
 };
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1229,11 +1339,21 @@ class Enemy {
             this.speed = 1.5;
             this.dmg = 10 * scale;
             this.tex = Textures.slime;
-        } else {
+        } else if (type === 'demon') {
             this.maxHp = 60 * scale;
             this.speed = 2.2;
             this.dmg = 20 * scale;
             this.tex = Textures.demon;
+        } else if (type === 'skeleton') {
+            this.maxHp = 20 * scale;   // Fragile but fast
+            this.speed = 3.0;
+            this.dmg = 15 * scale;
+            this.tex = Textures.skeleton;
+        } else if (type === 'golem') {
+            this.maxHp = 200 * scale;  // Tank
+            this.speed = 0.9;
+            this.dmg = 35 * scale;
+            this.tex = Textures.golem;
         }
 
         this.hp = this.maxHp;
@@ -1399,12 +1519,21 @@ class Item {
             const pickX = this.x + this.width / 2;
             const pickY = this.y + this.height / 2;
 
+            const rarityMult = this.rarity === 'legendary' ? 3 : this.rarity === 'rare' ? 2 : this.rarity === 'uncommon' ? 1.5 : 1;
             if (this.type === 'heart') {
-                player.hp = Math.min(player.maxHp, player.hp + 25);
+                player.hp = Math.min(player.maxHp, player.hp + Math.round(25 * rarityMult));
             } else if (this.type === 'sword') {
-                player.dmg += 5;
+                player.dmg += Math.round(5 * rarityMult);
             } else if (this.type === 'boot') {
-                player.speed += 0.2;
+                player.speed += 0.2 * rarityMult;
+            } else if (this.type === 'shield') {
+                player.maxHp += Math.round(20 * rarityMult);
+                player.hp = Math.min(player.maxHp, player.hp + Math.round(20 * rarityMult));
+            } else if (this.type === 'orb') {
+                // Orb: grant a single magic bolt on next attack
+                player.magicOrbs = (player.magicOrbs || 0) + Math.round(1 * rarityMult);
+            } else if (this.type === 'key') {
+                score += 500; // Bonus score for finding a key
             }
 
             // Pickup burst fires away from the now-deleted item position
@@ -1418,8 +1547,11 @@ class Item {
 
     draw() {
         let tex = Textures.itemHeart;
-        if (this.type === 'sword') tex = Textures.itemSword;
-        if (this.type === 'boot') tex = Textures.itemBoot;
+        if (this.type === 'sword')   tex = Textures.itemSword;
+        if (this.type === 'boot')    tex = Textures.itemBoot;
+        if (this.type === 'shield')  tex = Textures.itemShield;
+        if (this.type === 'orb')     tex = Textures.itemOrb;
+        if (this.type === 'key')     tex = Textures.itemKey;
 
         const cx = this.x + this.width / 2;
         const cy = this.y + this.height / 2;
@@ -1591,7 +1723,7 @@ class Chest {
 
         // Throw 2-3 items
         const count = 2 + Math.floor(Math.random() * 2);
-        const types = ['heart', 'sword', 'boot'];
+        const types = ['heart', 'sword', 'boot', 'shield', 'orb', 'key']
         for (let i = 0; i < count; i++) {
             const type = types[Math.floor(Math.random() * types.length)];
             const rarity = rollRarity();
@@ -1691,33 +1823,77 @@ let player = new Player();
  * 4. ROOM GENERATION (Infinite Rogue-like algorithm)
  * ---------------------------------------------------------
  */
+// Room type affects floor/wall texture and hazards
+const ROOM_TYPES = ['normal', 'normal', 'normal', 'ice', 'lava', 'crypt', 'arena'];
+let currentRoomType = 'normal';
+
 function generateRoomMap() {
+    // Pick a room type (weighted toward normal early on)
+    const pool = currentRoom < 4
+        ? ['normal', 'normal', 'normal']
+        : currentRoom < 8
+        ? ['normal', 'normal', 'ice', 'crypt']
+        : ROOM_TYPES;
+    currentRoomType = pool[Math.floor(Math.random() * pool.length)];
+
     roomMap = [];
     for (let y = 0; y < ROWS; y++) {
         let row = [];
         for (let x = 0; x < COLS; x++) {
-            // Edges are walls (1)
             if (x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1) {
                 row.push(1);
             } else {
-                row.push(0); // Floor
+                row.push(0);
             }
         }
         roomMap.push(row);
     }
 
-    // Add doors (2) roughly in the middle of each wall
-    roomMap[0][Math.floor(COLS/2)] = 2; // Top
-    roomMap[ROWS-1][Math.floor(COLS/2)] = 2; // Bottom
-    roomMap[Math.floor(ROWS/2)][0] = 2; // Left
-    roomMap[Math.floor(ROWS/2)][COLS-1] = 2; // Right
+    // Doors in middle of each wall
+    roomMap[0][Math.floor(COLS/2)] = 2;
+    roomMap[ROWS-1][Math.floor(COLS/2)] = 2;
+    roomMap[Math.floor(ROWS/2)][0] = 2;
+    roomMap[Math.floor(ROWS/2)][COLS-1] = 2;
 
-    // Optional: Add some random inner pillars
-    const pillars = Math.floor(Math.random() * 4);
-    for(let i=0; i<pillars; i++) {
-        let px = 2 + Math.floor(Math.random()*(COLS-4));
-        let py = 2 + Math.floor(Math.random()*(ROWS-4));
-        roomMap[py][px] = 1;
+    // --- Room-type layouts ---
+    if (currentRoomType === 'arena') {
+        // Arena: ring of pillars around the edge interior
+        for (let x = 2; x < COLS-2; x += 3) {
+            roomMap[2][x] = 1;
+            roomMap[ROWS-3][x] = 1;
+        }
+        for (let y = 2; y < ROWS-2; y += 3) {
+            roomMap[y][2] = 1;
+            roomMap[y][COLS-3] = 1;
+        }
+    } else if (currentRoomType === 'crypt') {
+        // Crypt: cross-shaped wall dividers with gaps
+        const midX = Math.floor(COLS/2);
+        const midY = Math.floor(ROWS/2);
+        for (let x = 2; x < COLS-2; x++) {
+            if (Math.abs(x - midX) > 1) roomMap[midY][x] = 1;
+        }
+        for (let y = 2; y < ROWS-2; y++) {
+            if (Math.abs(y - midY) > 1) roomMap[y][midX] = 1;
+        }
+    } else if (currentRoomType === 'ice' || currentRoomType === 'lava') {
+        // Ice/Lava: scattered pillar clusters
+        const clusters = 2 + Math.floor(Math.random() * 3);
+        for (let c = 0; c < clusters; c++) {
+            let cx = 3 + Math.floor(Math.random()*(COLS-6));
+            let cy = 3 + Math.floor(Math.random()*(ROWS-6));
+            roomMap[cy][cx] = 1;
+            if (cx+1 < COLS-1) roomMap[cy][cx+1] = 1;
+            if (cy+1 < ROWS-1) roomMap[cy+1][cx] = 1;
+        }
+    } else {
+        // Normal: random pillars
+        const pillars = Math.floor(Math.random() * 4);
+        for (let i = 0; i < pillars; i++) {
+            let px = 2 + Math.floor(Math.random()*(COLS-4));
+            let py = 2 + Math.floor(Math.random()*(ROWS-4));
+            roomMap[py][px] = 1;
+        }
     }
 }
 
@@ -1747,22 +1923,32 @@ function spawnEnemies() {
             }
         }
 
-        // Spawn logic
+        // Spawn logic — new enemy types unlock by room
         let type = 'slime';
-        if (currentRoom > 3 && Math.random() < 0.3) type = 'demon';
-        if (currentRoom > 10 && Math.random() < 0.6) type = 'demon';
+        const r = Math.random();
+        if (currentRoom > 3 && r < 0.25) type = 'demon';
+        if (currentRoom > 5 && r < 0.20) type = 'skeleton';
+        if (currentRoom > 8 && r < 0.12) type = 'golem';
+        if (currentRoom > 10 && r < 0.50) type = 'demon';
+
+        // Lava rooms favor demons; ice rooms favor skeletons
+        if (currentRoomType === 'lava' && currentRoom > 4 && Math.random() < 0.5) type = 'demon';
+        if (currentRoomType === 'ice'  && currentRoom > 4 && Math.random() < 0.5) type = 'skeleton';
 
         enemies.push(new Enemy(ex, ey, type));
     }
 }
 
 function rollDrop(x, y) {
-    // 30% chance to drop item
-    if (Math.random() < 0.3) {
+    // 35% chance to drop item
+    if (Math.random() < 0.35) {
         const rand = Math.random();
         let type = 'heart';
-        if (rand > 0.6 && rand <= 0.8) type = 'sword';
-        if (rand > 0.8) type = 'boot';
+        if (rand > 0.55 && rand <= 0.70) type = 'sword';
+        if (rand > 0.70 && rand <= 0.82) type = 'boot';
+        if (rand > 0.82 && rand <= 0.92) type = 'shield';
+        if (rand > 0.92 && rand <= 0.97) type = 'orb';
+        if (rand > 0.97) type = 'key';
         items.push(new Item(x, y, type));
     }
 }
@@ -1857,7 +2043,8 @@ function updateUI() {
     document.getElementById('ui-maxhp').innerText = maxHp;
     document.getElementById('ui-dmg').innerText = player.dmg;
     document.getElementById('ui-spd').innerText = player.speed.toFixed(1);
-    document.getElementById('ui-room').innerText = currentRoom;
+    const roomLabel = currentRoom + (currentRoomType !== 'normal' ? ' [' + currentRoomType.toUpperCase() + ']' : '');
+    document.getElementById('ui-room').innerText = roomLabel;
     document.getElementById('ui-score').innerText = score;
 
     // Update pixel HP bar
@@ -1880,8 +2067,22 @@ function drawMap() {
             let py = y * TILE_SIZE;
             let val = roomMap[y][x];
 
+            // Pick tile textures based on room type
+            const floorTex = currentRoomType === 'ice'  ? Textures.floorIce
+                           : currentRoomType === 'lava' ? Textures.floorLava
+                           : Textures.floor;
+            const wallTex  = currentRoomType === 'ice'  ? Textures.wallIce
+                           : currentRoomType === 'lava' ? Textures.wallLava
+                           : Textures.wall;
+
             if (val === 0) {
-                ctx.drawImage(Textures.floor, px, py);
+                ctx.drawImage(floorTex, px, py);
+
+                // Lava rooms: occasional shimmer overlay
+                if (currentRoomType === 'lava' && (x * 3 + y * 7) % 13 === 0) {
+                    ctx.fillStyle = 'rgba(231,76,60,0.10)';
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                }
 
                 // Subtle shadow cast down/right from adjacent walls
                 const wallAbove = roomMap[y - 1] && roomMap[y - 1][x] === 1;
@@ -1896,7 +2097,7 @@ function drawMap() {
                 }
 
             } else if (val === 1) {
-                ctx.drawImage(Textures.wall, px, py);
+                ctx.drawImage(wallTex, px, py);
 
                 // Top-edge highlight on walls to give depth
                 ctx.fillStyle = 'rgba(255,255,255,0.06)';
