@@ -801,8 +801,30 @@ const PALETTE = [
     '#27ae60',  // 23: Forest Floor Moss
     '#1e8449',  // 24: Moss Dark
     '#145a32',  // 25: Vine / Bush Dark Green
-    '#2980b9',  // 26: Water Dark
-    '#5dade2'   // 27: Water Highlight
+    '#2980b9',  // 26: Water Dark
+    '#5dade2',  // 27: Water Highlight
+    '#7d3c98',  // 28: Wraith Purple
+    '#a569bd',  // 29: Wraith Highlight
+    '#1c2833',  // 30: Shade Dark
+    '#f0b27a',  // 31: Witch Skin
+    '#e67e22',  // 32: Witch Hat/Robe
+    '#8e44ad',  // 33: Witch Magic
+    '#1a5276',  // 34: Serpent Body
+    '#2471a3',  // 35: Serpent Highlight
+    '#117a65',  // 36: Serpent Dark
+    '#e8daef',  // 37: Ghost White
+    '#85929e',  // 38: Stone Hall
+    '#566573',  // 39: Stone Hall Dark
+    '#aab7b8',  // 40: Stone Hall Light
+    '#4a235a',  // 41: Outdoor Night Sky
+    '#1a6b1a',  // 42: Outdoor Grass
+    '#0d4d0d',  // 43: Outdoor Grass Dark
+    '#6b3a2a',  // 44: Tree Trunk
+    '#4a2518',  // 45: Tree Trunk Dark
+    '#2d6a4f',  // 46: Tree Canopy
+    '#1b4332',  // 47: Tree Canopy Dark
+    '#74c69d',  // 48: Leaf Light
+    '#52b788'   // 49: Leaf Mid
 ];
 
 const GRIDS = {
@@ -1142,6 +1164,99 @@ const GRIDS = {
         [0,0,1,11,11,1,0,0],
         [0,0,0,1,11,1,0,0],
         [0,0,0,0,1,0,0,0]
+    ],
+    // ---- 4 NEW ENEMIES ----
+    wraith: [   // Room 6+: teleports near player, semi-transparent
+        [0,0,28,29,29,28,0,0],
+        [0,28,29,30,30,29,28,0],
+        [28,29,37,29,29,37,29,28],
+        [28,29,29,28,28,29,29,28],
+        [0,28,29,29,29,29,28,0],
+        [0,0,28,29,29,28,0,0],
+        [0,28,0,28,28,0,28,0],
+        [0,28,0,0,0,0,28,0]
+    ],
+    witch: [    // Room 7+: ranged caster, fires homing orbs
+        [0,0,32,32,32,32,0,0],
+        [0,32,32,32,32,32,32,0],
+        [0,1,31,31,31,31,1,0],
+        [1,31,31,33,33,31,31,1],
+        [1,32,32,32,32,32,32,1],
+        [0,1,32,32,32,32,1,0],
+        [0,1,31,1,0,1,31,1],
+        [0,1,1,0,0,0,1,1]
+    ],
+    serpent: [  // Room 9+: fast, low HP, dashes
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,35,35,1,0,0],
+        [0,1,35,36,35,35,1,0],
+        [1,34,35,35,35,35,34,1],
+        [1,34,34,35,35,34,34,1],
+        [0,1,34,36,34,34,1,0],
+        [0,0,1,34,34,1,0,0],
+        [0,0,0,1,1,0,0,0]
+    ],
+    ghost: [    // Room 12+: phases through walls briefly
+        [0,0,37,37,37,37,0,0],
+        [0,37,37,2,2,37,37,0],
+        [37,37,2,37,37,2,37,37],
+        [37,37,37,37,37,37,37,37],
+        [37,37,37,37,37,37,37,37],
+        [0,37,37,37,37,37,37,0],
+        [0,0,37,0,37,0,37,0],
+        [0,0,0,0,0,0,0,0]
+    ],
+    // ---- HALL ROOM TILES ----
+    floorHall: [
+        [38,38,40,38,38,38,40,38],
+        [38,39,38,38,38,38,38,38],
+        [40,38,38,38,38,39,38,38],
+        [38,38,38,39,38,38,38,40],
+        [38,38,40,38,38,38,38,38],
+        [39,38,38,38,40,38,39,38],
+        [38,38,38,38,38,38,38,38],
+        [38,40,38,39,38,38,40,38]
+    ],
+    wallHall: [
+        [1,1,1,1,1,1,1,1],
+        [1,40,38,40,40,38,40,1],
+        [1,38,39,38,38,39,38,1],
+        [1,40,38,38,38,38,40,1],
+        [1,1,1,1,1,1,1,1],
+        [1,38,40,38,38,40,38,1],
+        [1,39,38,39,38,39,39,1],
+        [1,38,38,38,38,38,38,1]
+    ],
+    // ---- OUTDOOR ROOM TILES ----
+    floorOutdoor: [
+        [42,43,42,42,43,42,42,43],
+        [42,42,43,42,42,42,43,42],
+        [43,42,42,42,43,42,42,42],
+        [42,42,42,43,42,42,42,43],
+        [42,43,42,42,42,43,42,42],
+        [42,42,43,42,42,42,42,43],
+        [43,42,42,42,43,42,43,42],
+        [42,43,42,43,42,42,42,42]
+    ],
+    treeTrunk: [
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,44,45,1,0,0],
+        [0,1,44,44,45,45,1,0],
+        [0,1,44,44,45,45,1,0],
+        [0,1,44,44,45,45,1,0],
+        [0,1,44,44,45,45,1,0],
+        [1,44,44,44,45,45,45,1],
+        [1,44,44,44,45,45,45,1]
+    ],
+    treeCanopy: [
+        [0,0,46,47,46,46,0,0],
+        [0,46,48,46,49,46,47,0],
+        [46,48,46,46,46,49,46,46],
+        [47,46,49,48,46,46,48,47],
+        [46,46,46,46,49,46,46,46],
+        [0,47,46,49,46,48,47,0],
+        [0,0,46,46,46,47,0,0],
+        [0,0,0,47,46,0,0,0]
     ]
 };
 
@@ -1564,6 +1679,110 @@ let orbs = [];
 let lavaTimer = 0;
 let forestWaterTimer = 0;
 
+// ---- OUTDOOR LEAF ENGINE ----
+let outdoorTrees = [];  // [{tx, ty}] tree tile positions for current room
+const LEAF_POOL_SIZE = 120;
+const leafPool = [];
+let windPhase = 0; // slowly shifts wind direction
+let windX = 0.4, windY = 0.15;
+
+// Pre-allocate leaf objects
+for (let _i = 0; _i < LEAF_POOL_SIZE; _i++) {
+    leafPool.push({
+        active: false,
+        x: 0, y: 0,
+        vx: 0, vy: 0,
+        life: 0, maxLife: 0,
+        size: 2,
+        angle: 0, angleV: 0,
+        color: '#52b788',
+        wobble: 0, wobbleV: 0,
+        alpha: 1
+    });
+}
+
+function spawnLeaf(tx, ty) {
+    for (let i = 0; i < LEAF_POOL_SIZE; i++) {
+        const l = leafPool[i];
+        if (!l.active) {
+            l.active = true;
+            // Spawn from canopy above the trunk (trunk is at ty, canopy is 1 tile above)
+            l.x = (tx * TILE_SIZE) + (Math.random() * TILE_SIZE * 1.8 - TILE_SIZE * 0.4);
+            l.y = ((ty - 1) * TILE_SIZE) + Math.random() * TILE_SIZE;
+            const spd = 0.3 + Math.random() * 0.5;
+            l.vx = windX * spd + (Math.random() - 0.5) * 0.4;
+            l.vy = 0.1 + Math.random() * 0.3;
+            l.life = 80 + Math.floor(Math.random() * 80);
+            l.maxLife = l.life;
+            l.size = 2 + Math.floor(Math.random() * 3);
+            l.angle = Math.random() * Math.PI * 2;
+            l.angleV = (Math.random() - 0.5) * 0.08;
+            l.wobble = Math.random() * Math.PI * 2;
+            l.wobbleV = 0.04 + Math.random() * 0.04;
+            l.alpha = 0.7 + Math.random() * 0.3;
+            l.color = Math.random() < 0.6 ? '#52b788' : Math.random() < 0.5 ? '#74c69d' : '#2d6a4f';
+            return;
+        }
+    }
+}
+
+function updateLeaves() {
+    // Slowly evolve wind
+    windPhase += 0.003;
+    windX = 0.35 + Math.sin(windPhase) * 0.25;
+    windY = 0.1 + Math.sin(windPhase * 0.7) * 0.1;
+
+    // Spawn new leaves from each tree
+    if (currentRoomType === 'outdoor') {
+        for (const t of outdoorTrees) {
+            if (Math.random() < 0.06) spawnLeaf(t.tx, t.ty);
+        }
+    }
+
+    for (let i = 0; i < LEAF_POOL_SIZE; i++) {
+        const l = leafPool[i];
+        if (!l.active) continue;
+        l.life--;
+        if (l.life <= 0) { l.active = false; continue; }
+        l.wobble += l.wobbleV;
+        l.vx += (windX - l.vx) * 0.012 + Math.sin(l.wobble) * 0.06;
+        l.vy += (0.18 - l.vy) * 0.008 + Math.cos(l.wobble * 0.8) * 0.03;
+        l.x += l.vx;
+        l.y += l.vy;
+        l.angle += l.angleV + Math.sin(l.wobble) * 0.015;
+        // Fade in then fade out
+        const t = l.life / l.maxLife;
+        l.alpha = t < 0.15 ? t / 0.15 : t > 0.85 ? (t - 0.85) / 0.15 * 0.3 + 0.7 : 0.75 + Math.sin(l.wobble) * 0.12;
+        // Wrap leaves that drift off screen
+        if (l.x > CANVAS_WIDTH + 16) l.active = false;
+        if (l.y > CANVAS_HEIGHT + 16) l.active = false;
+    }
+}
+
+function drawLeaves() {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    for (let i = 0; i < LEAF_POOL_SIZE; i++) {
+        const l = leafPool[i];
+        if (!l.active) continue;
+        ctx.save();
+        ctx.globalAlpha = l.alpha;
+        ctx.translate(Math.round(l.x), Math.round(l.y));
+        ctx.rotate(l.angle);
+        ctx.fillStyle = l.color;
+        // Draw as a small pixel leaf shape: 3 rects forming a leaf
+        const s = l.size;
+        ctx.fillRect(-s, 0, s * 2, s);     // horizontal bar
+        ctx.fillRect(0, -s, s, s * 2);     // vertical bar
+        // Lighter vein
+        ctx.globalAlpha = l.alpha * 0.4;
+        ctx.fillStyle = '#b7e4c7';
+        ctx.fillRect(0, 0, 1, s);
+        ctx.restore();
+    }
+    ctx.restore();
+}
+
 // Room transition state
 let roomTransitioning = false;
 
@@ -1835,6 +2054,7 @@ class Player {
             const ty = Math.floor(p.y / TILE_SIZE);
             if (roomMap[ty] && roomMap[ty][tx] === 1) return true; // 1 is Wall
             if (roomMap[ty] && roomMap[ty][tx] === 4) return true; // 4 is Bush (solid)
+            if (roomMap[ty] && roomMap[ty][tx] === 5) return true; // 5 is Tree (solid)
             // 2 is door, if doors are closed act like a wall
             if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
         }
@@ -2134,16 +2354,43 @@ class Enemy {
             this.dmg = 15 * scale;
             this.tex = Textures.skeleton;
         } else if (type === 'golem') {
-            this.maxHp = 200 * scale;  // Tank
+            this.maxHp = 200 * scale;
             this.speed = 0.9;
             this.dmg = 35 * scale;
             this.tex = Textures.golem;
+        } else if (type === 'wraith') {
+            this.maxHp = 45 * scale;
+            this.speed = 2.8;
+            this.dmg = 18 * scale;
+            this.tex = Textures.wraith;
+            this.teleportTimer = 0;
+        } else if (type === 'witch') {
+            this.maxHp = 55 * scale;
+            this.speed = 1.4;
+            this.dmg = 12 * scale;
+            this.tex = Textures.witch;
+            this.castTimer = 80 + Math.floor(Math.random() * 60);
+        } else if (type === 'serpent') {
+            this.maxHp = 35 * scale;
+            this.speed = 3.8;
+            this.dmg = 22 * scale;
+            this.tex = Textures.serpent;
+            this.dashTimer = 0;
+            this.dashVx = 0;
+            this.dashVy = 0;
+            this.dashFrames = 0;
+        } else if (type === 'ghost') {
+            this.maxHp = 70 * scale;
+            this.speed = 2.0;
+            this.dmg = 25 * scale;
+            this.tex = Textures.ghost;
+            this.phaseTimer = 0;
+            this.phasing = false;
         }
 
         this.hp = this.maxHp;
-        this.bob = Math.random() * Math.PI * 2;  // Offset so enemies don't sync
-        this.hitFlash = 0;  // Frames of white hit flash remaining
-        // Slimes squish when they move
+        this.bob = Math.random() * Math.PI * 2;
+        this.hitFlash = 0;
         this.squishX = 1;
         this.squishY = 1;
         this.squishTimer = 0;
@@ -2184,16 +2431,79 @@ class Enemy {
         if (dist < (this.width / 2 + player.width / 2)) {
             player.takeDamage(this.dmg);
         }
+
+        // ---- WRAITH: teleport close to player every 3s ----
+        if (this.type === 'wraith') {
+            this.teleportTimer++;
+            if (this.teleportTimer >= 180) {
+                this.teleportTimer = 0;
+                const angle = Math.random() * Math.PI * 2;
+                const r = 48 + Math.random() * 32;
+                const tx = player.x + Math.cos(angle) * r;
+                const ty = player.y + Math.sin(angle) * r;
+                if (tx > TILE_SIZE && tx < CANVAS_WIDTH - TILE_SIZE && ty > TILE_SIZE && ty < CANVAS_HEIGHT - TILE_SIZE) {
+                    this.x = tx;
+                    this.y = ty;
+                    VFX.spawnDust(tx + this.width/2, ty + this.height/2, 10, '#a569bd');
+                    VFX.spawnDeathFlash(tx + this.width/2, ty + this.height/2, '#7d3c98');
+                }
+            }
+        }
+
+        // ---- WITCH: fires homing orb at player every ~2s ----
+        if (this.type === 'witch') {
+            this.castTimer--;
+            if (this.castTimer <= 0) {
+                this.castTimer = 100 + Math.floor(Math.random() * 60);
+                const dx2 = player.x - this.x, dy2 = player.y - this.y;
+                const d2 = Math.sqrt(dx2*dx2 + dy2*dy2) || 1;
+                orbs.push({
+                    x: this.x + this.width/2, y: this.y + this.height/2,
+                    vx: (dx2/d2) * 3.5, vy: (dy2/d2) * 3.5,
+                    life: 90, maxLife: 90, dmg: this.dmg,
+                    pulse: 0, isEnemy: true
+                });
+                VFX.spawnDust(this.x + this.width/2, this.y, 6, '#8e44ad');
+            }
+        }
+
+        // ---- SERPENT: random dash bursts ----
+        if (this.type === 'serpent') {
+            if (this.dashFrames > 0) {
+                this.x += this.dashVx;
+                this.y += this.dashVy;
+                if (this.checkWallCollision()) { this.x -= this.dashVx; this.y -= this.dashVy; this.dashFrames = 0; }
+                this.dashFrames--;
+            } else {
+                this.dashTimer++;
+                if (this.dashTimer >= 60) {
+                    this.dashTimer = 0;
+                    const dx2 = player.x - this.x, dy2 = player.y - this.y;
+                    const d2 = Math.sqrt(dx2*dx2 + dy2*dy2) || 1;
+                    this.dashVx = (dx2/d2) * 8;
+                    this.dashVy = (dy2/d2) * 8;
+                    this.dashFrames = 8;
+                    VFX.spawnSparks(this.x + this.width/2, this.y + this.height/2, dx2/d2, dy2/d2, '#2471a3');
+                }
+            }
+        }
+
+        // ---- GHOST: phases through walls for 1s every 4s ----
+        if (this.type === 'ghost') {
+            this.phaseTimer++;
+            if (this.phaseTimer >= 240) { this.phaseTimer = 0; this.phasing = true; }
+            if (this.phasing && this.phaseTimer >= 60) { this.phasing = false; }
+        }
     }
 
     checkWallCollision() {
+        if (this.phasing) return false; // Ghost phases through walls
         const corners = [
             {x: this.x, y: this.y},
             {x: this.x + this.width, y: this.y},
             {x: this.x, y: this.y + this.height},
             {x: this.x + this.width, y: this.y + this.height}
         ];
-        
         for (let p of corners) {
             const tx = Math.floor(p.x / TILE_SIZE);
             const ty = Math.floor(p.y / TILE_SIZE);
@@ -2226,6 +2536,9 @@ class Enemy {
         ctx.translate(cx, cy + bobOffset);
         ctx.scale(this.squishX, this.squishY);
         ctx.imageSmoothingEnabled = false;
+        if (this.type === 'ghost' || this.type === 'wraith') {
+            ctx.globalAlpha = this.phasing ? 0.25 : 0.78 + Math.sin(this.bob * 0.5) * 0.18;
+        }
         ctx.drawImage(this.tex, -this.width / 2, -this.height / 2, this.width, this.height);
 
         // Hit flash: overlay white on top with source-atop
@@ -2618,7 +2931,7 @@ let player = new Player();
  * ---------------------------------------------------------
  */
 // Room type affects floor/wall texture and hazards
-const ROOM_TYPES = ['normal', 'normal', 'normal', 'ice', 'lava', 'crypt', 'arena', 'forest', 'forest'];
+const ROOM_TYPES = ['normal', 'normal', 'ice', 'lava', 'crypt', 'arena', 'forest', 'forest', 'hall', 'hall', 'vault', 'crossroads', 'outdoor'];
 let currentRoomType = 'normal';
 
 function generateRoomMap() {
@@ -2626,7 +2939,7 @@ function generateRoomMap() {
     const pool = currentRoom < 4
         ? ['normal', 'normal', 'normal']
         : currentRoom < 8
-        ? ['normal', 'normal', 'ice', 'crypt']
+        ? ['normal', 'normal', 'ice', 'crypt', 'hall']
         : ROOM_TYPES;
     currentRoomType = pool[Math.floor(Math.random() * pool.length)];
 
@@ -2699,6 +3012,74 @@ function generateRoomMap() {
             if (wx + 1 < COLS - 1 && roomMap[wy][wx + 1] === 0) roomMap[wy][wx + 1] = 3;
             if (wy + 1 < ROWS - 1 && roomMap[wy + 1] && roomMap[wy + 1][wx] === 0) roomMap[wy + 1][wx] = 3;
         }
+    } else if (currentRoomType === 'hall') {
+        // Hall: long narrow corridor — with a gap in the center so players don't get trapped
+        const midX = Math.floor(COLS/2);
+        
+        // Narrow corridor — walls 3 rows from top and 3 from bottom
+        for (let x = 1; x < COLS - 1; x++) {
+            if (Math.abs(x - midX) > 1) { // Leave a 3-tile gap in the middle
+                if (roomMap[3][x] === 0) roomMap[3][x] = 1;
+                if (roomMap[ROWS-4][x] === 0) roomMap[ROWS-4][x] = 1;
+            }
+        }
+        // Pillars along corridor walls
+        for (let x = 3; x < COLS - 3; x += 4) {
+            if (Math.abs(x - midX) > 1) { // Leave a 3-tile gap in the middle
+                roomMap[4][x] = 1;
+                roomMap[ROWS-5][x] = 1;
+            }
+        }
+    } else if (currentRoomType === 'vault') {
+        // Vault: thick walls inside with a protected chest pocket in the centre
+        const midX = Math.floor(COLS/2);
+        const midY = Math.floor(ROWS/2);
+        // Outer ring of pillars
+        for (let x = 3; x < COLS - 3; x += 2) {
+            if (Math.abs(x - midX) > 2) roomMap[3][x] = 1;
+            if (Math.abs(x - midX) > 2) roomMap[ROWS-4][x] = 1;
+        }
+        for (let y = 3; y < ROWS - 3; y += 2) {
+            if (Math.abs(y - midY) > 2) roomMap[y][3] = 1;
+            if (Math.abs(y - midY) > 2) roomMap[y][COLS-4] = 1;
+        }
+    } else if (currentRoomType === 'crossroads') {
+        // Crossroads: 4 alcoves in the corners, open centre
+        const corners = [[2,2],[2,COLS-3],[ROWS-3,2],[ROWS-3,COLS-3]];
+        corners.forEach(([cy2,cx2]) => {
+            for (let dy = 0; dy <= 2; dy++) {
+                for (let dx = 0; dx <= 2; dx++) {
+                    if (dy === 1 && dx === 1) continue; // hollow centre
+                    if (roomMap[cy2+dy] && roomMap[cy2+dy][cx2+dx] === 0) roomMap[cy2+dy][cx2+dx] = 1;
+                }
+            }
+        });
+        // Diagonal wall sections from corners
+        for (let i = 1; i <= 2; i++) {
+            if (roomMap[2+i]) roomMap[2+i][2+i] = 1;
+            if (roomMap[2+i]) roomMap[2+i][COLS-3-i] = 1;
+            if (roomMap[ROWS-3-i]) roomMap[ROWS-3-i][2+i] = 1;
+            if (roomMap[ROWS-3-i]) roomMap[ROWS-3-i][COLS-3-i] = 1;
+        }
+    } else if (currentRoomType === 'outdoor') {
+        // Outdoor: no inner walls — pure open field. Trees placed as solid tile=5 markers
+        // Only boundary walls remain. Remove all doors (open exit in all 4 directions)
+        // Place tree trunk tiles (solid=1) in natural clusters
+        const treeSpots = [];
+        const clusterCount = 3 + Math.floor(Math.random() * 3);
+        for (let c = 0; c < clusterCount; c++) {
+            const tx = 3 + Math.floor(Math.random() * (COLS - 6));
+            const ty = 3 + Math.floor(Math.random() * (ROWS - 6));
+            treeSpots.push({tx, ty});
+            roomMap[ty][tx] = 5; // tree tile value 5 = tree trunk (solid, drawn specially)
+            // Occasionally a second tree in cluster
+            if (Math.random() < 0.5 && tx + 2 < COLS - 2) {
+                roomMap[ty][tx + 2] = 5;
+                treeSpots.push({tx: tx+2, ty});
+            }
+        }
+        // Store tree positions for leaf engine
+        outdoorTrees = treeSpots;
     } else {
         // Normal: random pillars
         const pillars = Math.floor(Math.random() * 4);
@@ -2747,6 +3128,17 @@ function spawnEnemies() {
         // Lava rooms favor demons; ice rooms favor skeletons
         if (currentRoomType === 'lava' && currentRoom > 4 && Math.random() < 0.5) type = 'demon';
         if (currentRoomType === 'ice'  && currentRoom > 4 && Math.random() < 0.5) type = 'skeleton';
+
+        // New enemy unlocks
+        if (currentRoom > 6  && r < 0.18) type = 'wraith';
+        if (currentRoom > 7  && r < 0.15) type = 'witch';
+        if (currentRoom > 9  && r < 0.14) type = 'serpent';
+        if (currentRoom > 12 && r < 0.10) type = 'ghost';
+
+        // Outdoor room: mostly forest creatures
+        if (currentRoomType === 'outdoor' && Math.random() < 0.5) {
+            type = ['slime','wraith','serpent'][Math.floor(Math.random() * 3)];
+        }
 
         enemies.push(new Enemy(ex, ey, type));
     }
@@ -2799,6 +3191,8 @@ function nextRoom(exitTx, exitTy) {
     currentRoom++;
     lavaTimer = 0;
     forestWaterTimer = 0;
+    outdoorTrees = [];
+    for (let _i = 0; _i < LEAF_POOL_SIZE; _i++) leafPool[_i].active = false;
     orbs = [];
     comboCount = 0;
     comboTimer = 0;
@@ -3163,17 +3557,31 @@ function drawMap() {
             let val = roomMap[y][x];
 
             // Pick tile textures based on room type
-            const floorTex = currentRoomType === 'ice'    ? Textures.floorIce
-                           : currentRoomType === 'lava'   ? Textures.floorLava
-                           : currentRoomType === 'forest' ? Textures.floorForest
+            const floorTex = currentRoomType === 'ice'      ? Textures.floorIce
+                           : currentRoomType === 'lava'     ? Textures.floorLava
+                           : currentRoomType === 'forest'   ? Textures.floorForest
+                           : currentRoomType === 'hall'     ? Textures.floorHall
+                           : currentRoomType === 'vault'    ? Textures.floorHall
+                           : currentRoomType === 'crossroads' ? Textures.floorHall
+                           : currentRoomType === 'outdoor'  ? Textures.floorOutdoor
                            : Textures.floor;
-            const wallTex  = currentRoomType === 'ice'    ? Textures.wallIce
-                           : currentRoomType === 'lava'   ? Textures.wallLava
-                           : currentRoomType === 'forest' ? Textures.wallForest
+            const wallTex  = currentRoomType === 'ice'      ? Textures.wallIce
+                           : currentRoomType === 'lava'     ? Textures.wallLava
+                           : currentRoomType === 'forest'   ? Textures.wallForest
+                           : currentRoomType === 'hall'     ? Textures.wallHall
+                           : currentRoomType === 'vault'    ? Textures.wallHall
+                           : currentRoomType === 'crossroads' ? Textures.wallHall
+                           : currentRoomType === 'outdoor'  ? Textures.wallHall
                            : Textures.wall;
 
             if (val === 0) {
                 ctx.drawImage(floorTex, px, py);
+
+                // Outdoor: dappled sunlight patches on grass
+                if (currentRoomType === 'outdoor' && (x * 7 + y * 13) % 11 === 0) {
+                    ctx.fillStyle = 'rgba(116,198,157,0.18)';
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                }
 
                 // Lava rooms: occasional shimmer overlay
                 if (currentRoomType === 'lava' && (x * 3 + y * 7) % 13 === 0) {
@@ -3246,6 +3654,16 @@ function drawMap() {
                 // Bush cluster — draw floor underneath, then bush on top
                 ctx.drawImage(floorTex, px, py);
                 ctx.drawImage(Textures.bushCluster, px, py);
+            } else if (val === 5) {
+                // Tree — trunk at this tile, canopy drawn 1 tile above
+                ctx.drawImage(floorTex, px, py);
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(Textures.treeTrunk, px, py, TILE_SIZE, TILE_SIZE);
+                // Canopy drawn 1 tile above (may overlap floor tile above)
+                ctx.drawImage(Textures.treeCanopy, px, py - TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                // Subtle canopy shadow on the floor below
+                ctx.fillStyle = 'rgba(0,0,0,0.14)';
+                ctx.fillRect(px + 2, py + 20, TILE_SIZE - 4, 10);
             } else if (val === 2) {
                 if (doorsOpen) {
                     ctx.drawImage(Textures.doorOpen, px, py);
@@ -3282,7 +3700,17 @@ function loop() {
             return false;
         }
 
-        // Enemy collision
+        // Enemy orbs hit player
+        if (o.isEnemy) {
+            if (o.x > player.x && o.x < player.x + player.width && o.y > player.y && o.y < player.y + player.height) {
+                player.takeDamage(o.dmg);
+                VFX.spawnImpact(o.x, o.y, '#8e44ad');
+                return false;
+            }
+            return o.life > 0;
+        }
+
+        // Player orbs hit enemies
         for (let i = enemies.length - 1; i >= 0; i--) {
             const e = enemies[i];
             if (o.x > e.x && o.x < e.x + e.width && o.y > e.y && o.y < e.y + e.height) {
@@ -3302,6 +3730,9 @@ function loop() {
         }
         return o.life > 0;
     });
+
+    // Outdoor leaf engine update
+    if (currentRoomType === 'outdoor') updateLeaves();
 
     // Lava room: periodic floor damage
     if (currentRoomType === 'lava') {
@@ -3350,6 +3781,9 @@ function loop() {
         ctx.drawImage(Textures.floorCrack, Math.round(c.x - 16), Math.round(c.y - 8), 48, 48);
         ctx.restore();
     });
+
+    // Draw leaves behind sprites
+    if (currentRoomType === 'outdoor') drawLeaves();
 
     if (chest) chest.draw();
     items.forEach(i => i.draw());
