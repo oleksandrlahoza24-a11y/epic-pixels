@@ -6,6 +6,8 @@
     <!-- Viewport settings strictly designed to prevent zooming and make it full screen on iPads -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
     <title>Infinite Pixel Dungeon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body,
         html {
@@ -15,7 +17,7 @@
             height: 100vh;
             background-color: #111;
             overflow: hidden;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace;
             touch-action: none;
             /* Prevents swipe-to-refresh and zooming */
             user-select: none;
@@ -58,7 +60,7 @@
             display: flex;
             align-items: center;
             gap: 5px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace;
             font-size: 0px;
             /* hide any stray whitespace */
         }
@@ -69,11 +71,12 @@
         }
 
         .stat-label {
-            font-size: 11px;
+            font-size: 8px;
             color: #aaaacc;
             text-shadow: 1px 1px 0 #000;
             letter-spacing: 1px;
             min-width: 28px;
+            font-family: 'Press Start 2P', monospace;
         }
 
         /* HP bar container */
@@ -118,7 +121,7 @@
             font-size: 10px;
             color: #fff;
             text-shadow: 1px 1px 0 #000;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace;
             letter-spacing: 0px;
             min-width: 52px;
         }
@@ -128,7 +131,7 @@
             font-size: 11px;
             color: #fff;
             text-shadow: 1px 1px 0 #000;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace;
             letter-spacing: 0px;
             background: #1a1a2e;
             outline: 1px solid #000;
@@ -162,7 +165,7 @@
             color: #aaaacc;
             text-shadow: 1px 1px 0 #000;
             letter-spacing: 1px;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Press Start 2P', monospace;
         }
 
         /* Game Screen */
@@ -341,7 +344,7 @@
             outline: 2px solid #000;
             font-size: 11px;
             color: #000;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -385,7 +388,7 @@
 
         #weapon-name-tag {
             font-size: 9px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             color: #aaaacc;
             text-shadow: 1px 1px 0 #000;
             letter-spacing: 1px;
@@ -407,7 +410,7 @@
             box-shadow: 3px 3px 0 #000;
             padding: 5px 10px;
             font-size: 11px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             color: #fff;
             text-shadow: 1px 1px 0 #000;
             letter-spacing: 1px;
@@ -437,7 +440,7 @@
             transform: translate(-50%, -50%);
             pointer-events: none;
             z-index: 15;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             font-size: 0px;
             display: none;
         }
@@ -719,7 +722,12 @@ const PALETTE = [
     '#e8f4fd',  // 19: Ice Highlight
     '#c0392b',  // 20: Lava Floor
     '#e74c3c',  // 21: Lava Bright
-    '#922b21'   // 22: Lava Wall Dark
+    '#922b21',  // 22: Lava Wall Dark
+    '#27ae60',  // 23: Forest Floor Moss
+    '#1e8449',  // 24: Moss Dark
+    '#145a32',  // 25: Vine / Bush Dark Green
+    '#2980b9',  // 26: Water Dark
+    '#5dade2'   // 27: Water Highlight
 ];
 
 const GRIDS = {
@@ -936,6 +944,48 @@ const GRIDS = {
         [1,1,1,1,1,1,1,1],
         [1,20,22,20,20,22,20,1]
     ],
+
+    floorForest: [  // Lush forest floor — mossy green
+        [23,23,24,23,23,23,24,23],
+        [23,24,23,23,24,23,23,23],
+        [23,23,23,23,23,23,23,24],
+        [24,23,23,24,23,23,24,23],
+        [23,23,24,23,23,24,23,23],
+        [23,24,23,23,23,23,23,23],
+        [23,23,23,24,23,23,23,24],
+        [24,23,23,23,24,23,23,23]
+    ],
+    floorWater: [   // Water puddle tile — walkable
+        [26,27,27,26,26,27,27,26],
+        [27,27,26,27,27,26,27,27],
+        [27,26,27,27,26,27,27,27],
+        [26,27,27,26,27,27,26,27],
+        [27,27,26,27,27,27,27,26],
+        [27,26,27,27,26,27,27,27],
+        [26,27,27,26,27,26,27,27],
+        [27,26,26,27,27,27,26,27]
+    ],
+    wallForest: [   // Vine-covered stone wall
+        [1,1,1,1,1,1,1,1],
+        [1,25,23,25,25,23,25,1],
+        [1,23,25,25,25,25,23,1],
+        [1,1,25,1,1,25,1,1],
+        [1,25,25,23,23,25,25,1],
+        [1,25,23,25,25,23,25,1],
+        [1,1,1,25,25,1,1,1],
+        [1,25,25,23,23,25,25,1]
+    ],
+    bushCluster: [  // Bush/shrub decoration — blocks like a wall
+        [0,0,1,1,1,1,0,0],
+        [0,1,25,25,25,25,1,0],
+        [1,25,24,25,25,24,25,1],
+        [1,25,25,25,25,25,25,1],
+        [1,25,24,25,25,24,25,1],
+        [0,1,25,25,25,25,1,0],
+        [0,0,1,25,1,25,1,0],
+        [0,0,0,1,1,1,0,0]
+    ],
+
         weaponDagger: [    // Fast, low damage
         [0,0,0,0,0,1,1,0],
         [0,0,0,0,1,14,14,1],
@@ -1347,6 +1397,7 @@ let orbs = [];
 
 // Lava hazard timer
 let lavaTimer = 0;
+let forestWaterTimer = 0;
 
 // Room transition state
 let roomTransitioning = false;
@@ -1527,6 +1578,19 @@ class Player {
         this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
         this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
 
+        // Water puddle: slow player and spawn splash particles
+        if (currentRoomType === 'forest') {
+            const ptx = Math.floor((this.x + this.width / 2) / TILE_SIZE);
+            const pty = Math.floor((this.y + this.height / 2) / TILE_SIZE);
+            if (roomMap[pty] && roomMap[pty][ptx] === 3) {
+                this.x -= dx * 0.45;
+                this.y -= dy * 0.45;
+                if (Math.random() < 0.18) {
+                    VFX.particles.push({ type: 'dust', x: this.x + this.width/2 + (Math.random()-0.5)*8, y: this.y + this.height - 2, vx: (Math.random()-0.5)*1.2, vy: -(0.6 + Math.random()*0.8), life: 10, maxLife: 10, size: 3, color: '#5dade2' });
+                }
+            }
+        }
+
         // Attack Logic
         const wepCooldown = WEAPONS[this.equippedWeapon].cooldown;
         if (Input.attack && this.attackTimer === 0) {
@@ -1601,6 +1665,7 @@ class Player {
             const tx = Math.floor(p.x / TILE_SIZE);
             const ty = Math.floor(p.y / TILE_SIZE);
             if (roomMap[ty] && roomMap[ty][tx] === 1) return true; // 1 is Wall
+            if (roomMap[ty] && roomMap[ty][tx] === 4) return true; // 4 is Bush (solid)
             // 2 is door, if doors are closed act like a wall
             if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
         }
@@ -2379,7 +2444,7 @@ let player = new Player();
  * ---------------------------------------------------------
  */
 // Room type affects floor/wall texture and hazards
-const ROOM_TYPES = ['normal', 'normal', 'normal', 'ice', 'lava', 'crypt', 'arena'];
+const ROOM_TYPES = ['normal', 'normal', 'normal', 'ice', 'lava', 'crypt', 'arena', 'forest', 'forest'];
 let currentRoomType = 'normal';
 
 function generateRoomMap() {
@@ -2440,6 +2505,25 @@ function generateRoomMap() {
             roomMap[cy][cx] = 1;
             if (cx+1 < COLS-1) roomMap[cy][cx+1] = 1;
             if (cy+1 < ROWS-1) roomMap[cy+1][cx] = 1;
+        }
+    } else if (currentRoomType === 'forest') {
+        // Forest: scattered bush clusters (tile 4) + water puddles (tile 3)
+        const bushCount = 4 + Math.floor(Math.random() * 4);
+        for (let b = 0; b < bushCount; b++) {
+            let bx = 2 + Math.floor(Math.random() * (COLS - 4));
+            let by = 2 + Math.floor(Math.random() * (ROWS - 4));
+            roomMap[by][bx] = 4; // Bush cluster (solid)
+            if (Math.random() < 0.5 && bx + 1 < COLS - 1) roomMap[by][bx + 1] = 4;
+            if (Math.random() < 0.4 && by + 1 < ROWS - 1) roomMap[by + 1][bx] = 4;
+        }
+        // Water puddles (tile 3 = walkable water)
+        const puddleCount = 3 + Math.floor(Math.random() * 4);
+        for (let p = 0; p < puddleCount; p++) {
+            let wx = 2 + Math.floor(Math.random() * (COLS - 4));
+            let wy = 2 + Math.floor(Math.random() * (ROWS - 4));
+            if (roomMap[wy][wx] === 0) roomMap[wy][wx] = 3;
+            if (wx + 1 < COLS - 1 && roomMap[wy][wx + 1] === 0) roomMap[wy][wx + 1] = 3;
+            if (wy + 1 < ROWS - 1 && roomMap[wy + 1] && roomMap[wy + 1][wx] === 0) roomMap[wy + 1][wx] = 3;
         }
     } else {
         // Normal: random pillars
@@ -2539,6 +2623,7 @@ function nextRoom(exitTx, exitTy) {
 
     currentRoom++;
     lavaTimer = 0;
+    forestWaterTimer = 0;
     orbs = [];
     comboCount = 0;
     comboTimer = 0;
@@ -2787,11 +2872,13 @@ function drawMap() {
             let val = roomMap[y][x];
 
             // Pick tile textures based on room type
-            const floorTex = currentRoomType === 'ice'  ? Textures.floorIce
-                           : currentRoomType === 'lava' ? Textures.floorLava
+            const floorTex = currentRoomType === 'ice'    ? Textures.floorIce
+                           : currentRoomType === 'lava'   ? Textures.floorLava
+                           : currentRoomType === 'forest' ? Textures.floorForest
                            : Textures.floor;
-            const wallTex  = currentRoomType === 'ice'  ? Textures.wallIce
-                           : currentRoomType === 'lava' ? Textures.wallLava
+            const wallTex  = currentRoomType === 'ice'    ? Textures.wallIce
+                           : currentRoomType === 'lava'   ? Textures.wallLava
+                           : currentRoomType === 'forest' ? Textures.wallForest
                            : Textures.wall;
 
             if (val === 0) {
@@ -2800,6 +2887,12 @@ function drawMap() {
                 // Lava rooms: occasional shimmer overlay
                 if (currentRoomType === 'lava' && (x * 3 + y * 7) % 13 === 0) {
                     ctx.fillStyle = 'rgba(231,76,60,0.10)';
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                }
+
+                // Forest rooms: occasional vine drape shimmer
+                if (currentRoomType === 'forest' && (x * 5 + y * 11) % 17 === 0) {
+                    ctx.fillStyle = 'rgba(39,174,96,0.10)';
                     ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
                 }
 
@@ -2822,6 +2915,20 @@ function drawMap() {
                 ctx.fillStyle = 'rgba(255,255,255,0.06)';
                 ctx.fillRect(px, py, TILE_SIZE, 2);
 
+            } else if (val === 3) {
+                // Water puddle — draw forest floor underneath, then water on top
+                ctx.drawImage(Textures.floorForest, px, py);
+                ctx.drawImage(Textures.floorWater, px, py);
+                // Ripple shimmer
+                const ripple = (Math.floor(Date.now() / 400) + x + y) % 3;
+                if (ripple === 0) {
+                    ctx.fillStyle = 'rgba(93,173,226,0.22)';
+                    ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+                }
+            } else if (val === 4) {
+                // Bush cluster — draw floor underneath, then bush on top
+                ctx.drawImage(floorTex, px, py);
+                ctx.drawImage(Textures.bushCluster, px, py);
             } else if (val === 2) {
                 if (doorsOpen) {
                     ctx.drawImage(Textures.doorOpen, px, py);
