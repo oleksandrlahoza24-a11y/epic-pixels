@@ -824,7 +824,12 @@ const PALETTE = [
     '#2d6a4f',  // 46: Tree Canopy
     '#1b4332',  // 47: Tree Canopy Dark
     '#74c69d',  // 48: Leaf Light
-    '#52b788'   // 49: Leaf Mid
+    '#52b788',  // 49: Leaf Mid
+    '#d4a373',  // 50: Dirt Light
+    '#cc8b59',  // 51: Dirt Mid
+    '#bc6c25',  // 52: Dirt Dark
+    '#fff0f5',  // 53: Flower White/Pink
+    '#ffb703'   // 54: Flower Yellow
 ];
 
 const GRIDS = {
@@ -1257,6 +1262,36 @@ const GRIDS = {
         [0,47,46,49,46,48,47,0],
         [0,0,46,46,46,47,0,0],
         [0,0,0,47,46,0,0,0]
+    ],
+    floorDirt: [
+        [51,51,50,51,52,51,51,50],
+        [51,52,51,51,51,50,51,51],
+        [50,51,51,52,51,51,51,52],
+        [51,51,52,51,51,51,50,51],
+        [52,51,51,51,50,51,51,51],
+        [51,50,51,52,51,51,52,51],
+        [51,51,51,51,51,52,51,50],
+        [50,51,52,51,50,51,51,51]
+    ],
+    floorFlower: [
+        [42,43,42,42,43,42,42,43],
+        [42,53,43,42,42,42,54,42],
+        [43,42,42,42,43,42,42,42],
+        [42,42,42,43,42,53,42,43],
+        [42,43,42,42,42,43,42,42],
+        [42,42,54,42,42,42,42,43],
+        [43,42,42,42,43,42,43,42],
+        [42,43,42,43,42,42,53,42]
+    ],
+    wallTreeBoundary: [
+        [47,47,47,47,47,47,47,47],
+        [47,46,47,46,49,46,47,47],
+        [46,49,46,46,47,46,49,46],
+        [49,48,46,49,46,48,46,49],
+        [47,46,49,46,47,46,47,46],
+        [46,45,47,46,45,47,46,45],
+        [44,45,44,45,44,45,44,45],
+        [44,44,45,44,44,45,44,44]
     ]
 };
 
@@ -1324,15 +1359,18 @@ initTextures();
 const VFX = {
     particles: [],
 
-    // Spawn a single floating damage number
+    // Spawn a single floating damage number (Now Pops, Bounces, and Scales!)
     spawnDamageNumber(x, y, value, color) {
         this.particles.push({
             type: 'dmgnum',
-            x, y,
-            vy: -1.8,
-            life: 40, maxLife: 40,
+            x: x + (Math.random() - 0.5) * 12,
+            y: y,
+            vx: (Math.random() - 0.5) * 1.5,
+            vy: -2.5 - Math.random() * 1.5, // Pops up higher
+            life: 45, maxLife: 45,
             value: value.toString(),
-            color: color || '#ffffff'
+            color: color || '#ffffff',
+            scale: 1.8 // Starts big
         });
     },
 
@@ -1340,19 +1378,18 @@ const VFX = {
     spawnDust(x, y, count, color) {
         for (let i = 0; i < count; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const spd = 0.8 + Math.random() * 2.8;
-            const life = 18 + Math.floor(Math.random() * 20);
+            const spd = 1.0 + Math.random() * 3.5;
+            const life = 15 + Math.floor(Math.random() * 25);
             this.particles.push({
                 type: 'dust',
-                x: x + (Math.random() - 0.5) * 10,
-                y: y + (Math.random() - 0.5) * 10,
+                x: x + (Math.random() - 0.5) * 12,
+                y: y + (Math.random() - 0.5) * 12,
                 vx: Math.cos(angle) * spd,
                 vy: Math.sin(angle) * spd,
                 life, maxLife: life,
                 size: 2 + Math.floor(Math.random() * 4),
                 color: color || '#ffffff',
-                // Pixel shadow offset for depth
-                shadow: Math.random() < 0.4
+                shadow: Math.random() < 0.5
             });
         }
     },
@@ -1360,9 +1397,9 @@ const VFX = {
     // Spawn a burst of pixel sparks in a cone (hit impact)
     spawnSparks(x, y, dirX, dirY, color) {
         const c = color || '#ffe870';
-        for (let i = 0; i < 7; i++) {
-            const spread = (Math.random() - 0.5) * 2.2;
-            const spd = 1.5 + Math.random() * 3.5;
+        for (let i = 0; i < 14; i++) {
+            const spread = (Math.random() - 0.5) * 2.8;
+            const spd = 2.0 + Math.random() * 5.0;
             const nx = dirX + spread * Math.abs(dirY || 0.5);
             const ny = dirY + spread * Math.abs(dirX || 0.5);
             const len = Math.sqrt(nx*nx + ny*ny) || 1;
@@ -1371,21 +1408,21 @@ const VFX = {
                 x, y,
                 vx: (nx/len) * spd,
                 vy: (ny/len) * spd,
-                life: 10 + Math.floor(Math.random() * 10),
-                maxLife: 20,
-                size: 1 + Math.floor(Math.random() * 3),
+                life: 12 + Math.floor(Math.random() * 18),
+                maxLife: 30,
+                size: 2 + Math.floor(Math.random() * 3),
                 color: c,
                 tail: []
             });
         }
     },
 
-    // Spawn an impact shockwave — fast-expanding pixelated ring that shrinks
+    // Spawn an impact shockwave — fast-expanding pixelated ring
     spawnImpact(x, y, color) {
         this.particles.push({
             type: 'impact',
             x, y,
-            life: 10, maxLife: 10,
+            life: 12, maxLife: 12,
             radius: 4,
             color: color || '#ffffff'
         });
@@ -1395,27 +1432,27 @@ const VFX = {
     spawnSlash(cx, cy, dirX, dirY) {
         const perpX = -dirY;
         const perpY = dirX;
-        const count = 12;
+        const count = 16;
         for (let i = 0; i < count; i++) {
             const t = (i / (count - 1)) - 0.5;
-            const reach = 28 + Math.abs(t) * 10;
-            const ox = dirX * reach + perpX * t * 40;
-            const oy = dirY * reach + perpY * t * 40;
-            const spd = 1.8 + Math.abs(t) * 2.0;
+            const reach = 28 + Math.abs(t) * 12;
+            const ox = dirX * reach + perpX * t * 45;
+            const oy = dirY * reach + perpY * t * 45;
+            const spd = 2.0 + Math.abs(t) * 2.5;
             const colors = ['#ffe870', '#ffffff', '#ffcc00', '#fff5aa'];
             this.particles.push({
                 type: 'slash',
                 x: cx + ox, y: cy + oy,
-                vx: dirX * spd + perpX * t * 1.4,
-                vy: dirY * spd + perpY * t * 1.4,
-                life: 7 + Math.floor((1 - Math.abs(t * 2)) * 9),
-                maxLife: 16,
-                size: Math.round(2 + (1 - Math.abs(t * 2)) * 5),
+                vx: dirX * spd + perpX * t * 1.6,
+                vy: dirY * spd + perpY * t * 1.6,
+                life: 8 + Math.floor((1 - Math.abs(t * 2)) * 10),
+                maxLife: 18,
+                size: Math.round(3 + (1 - Math.abs(t * 2)) * 6),
                 color: colors[i % colors.length]
             });
         }
         // Bright flash core
-        this.particles.push({ type: 'slash', x: cx + dirX * 22, y: cy + dirY * 22, vx: dirX, vy: dirY, life: 7, maxLife: 7, size: 8, color: '#ffffff' });
+        this.particles.push({ type: 'slash', x: cx + dirX * 22, y: cy + dirY * 22, vx: dirX, vy: dirY, life: 9, maxLife: 9, size: 10, color: '#ffffff' });
         // Pixel sparks fanning out perpendicular
         this.spawnSparks(cx + dirX * 26, cy + dirY * 26, dirX, dirY, '#ffe870');
         this.spawnImpact(cx + dirX * 22, cy + dirY * 22, '#ffe870');
@@ -1425,13 +1462,13 @@ const VFX = {
     spawnDeathChunks(ex, ey, ew, eh, texture) {
         this.spawnImpact(ex + ew/2, ey + eh/2, '#ffffff');
         this.spawnSparks(ex + ew/2, ey + eh/2, 0, -1, '#ffee88');
-        const cols = 3, rows = 2;
+        const cols = 4, rows = 3;
         const cw = ew / cols;
         const ch = eh / rows;
         for (let row = 0; row < rows; row++) {
             for (let col = 0; col < cols; col++) {
-                const angle = Math.atan2(row - 0.5, col - 1) + (Math.random() - 0.5) * 0.5;
-                const spd = 1.6 + Math.random() * 1.4;
+                const angle = Math.atan2(row - 1, col - 1.5) + (Math.random() - 0.5) * 0.8;
+                const spd = 2.0 + Math.random() * 2.5;
                 const snap = document.createElement('canvas');
                 snap.width = Math.ceil(cw);
                 snap.height = Math.ceil(ch);
@@ -1446,20 +1483,20 @@ const VFX = {
                     x: ex + col * cw,
                     y: ey + row * ch,
                     vx: Math.cos(angle) * spd,
-                    vy: Math.sin(angle) * spd - 0.4,
-                    rot: (Math.random() - 0.5) * 0.15,
-                    rotSpeed: (Math.random() - 0.5) * 0.08,
-                    life: 40 + Math.floor(Math.random() * 10),
-                    maxLife: 50,
+                    vy: Math.sin(angle) * spd - 0.6,
+                    rot: (Math.random() - 0.5) * 0.25,
+                    rotSpeed: (Math.random() - 0.5) * 0.12,
+                    life: 45 + Math.floor(Math.random() * 15),
+                    maxLife: 60,
                     w: snap.width,
                     h: snap.height,
                     img: snap,
-                    gravity: 0.06
+                    gravity: 0.08
                 });
             }
         }
         const dustColor = texture === Textures.slime ? '#2ecc71' : '#e74c3c';
-        this.spawnDust(ex + ew / 2, ey + eh / 2, 6, dustColor);
+        this.spawnDust(ex + ew / 2, ey + eh / 2, 12, dustColor);
     },
 
     // Spawn flash rings (death flash) — inner fast + outer slow
@@ -1467,35 +1504,43 @@ const VFX = {
         this.particles.push({
             type: 'ring',
             x: cx, y: cy,
-            life: 14, maxLife: 14,
-            radius: 3,
-            expandRate: 5,
+            life: 18, maxLife: 18,
+            radius: 4,
+            expandRate: 6,
             color: color || '#ffffff'
         });
         this.particles.push({
             type: 'ring',
             x: cx, y: cy,
-            life: 22, maxLife: 22,
+            life: 25, maxLife: 25,
             radius: 2,
-            expandRate: 2.5,
+            expandRate: 3,
             color: color || '#ffffff'
         });
+        // Blocky burst in center
+        for(let i = 0; i < 4; i++){
+            this.particles.push({
+                type: 'dust', x: cx, y: cy,
+                vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5,
+                life: 12, maxLife: 12, size: 6, color: '#ffffff'
+            });
+        }
     },
 
     // Spawn item pickup burst at a fixed world position (called after item is removed)
     spawnPickup(cx, cy, color) {
         const c = color || '#f1c40f';
-        for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI * 2;
-            const spd = 2.5 + Math.random() * 1.5;
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const spd = 2.5 + Math.random() * 2.0;
             this.particles.push({
                 type: 'dust',
                 x: cx,
                 y: cy,
                 vx: Math.cos(angle) * spd,
                 vy: Math.sin(angle) * spd - 0.5,
-                life: 14,
-                maxLife: 14,
+                life: 16,
+                maxLife: 16,
                 size: 3,
                 color: c
             });
@@ -1547,10 +1592,13 @@ const VFX = {
                 p.vx *= 0.90;
                 p.vy *= 0.90;
             } else if (p.type === 'impact') {
-                p.radius += 4;
+                p.radius += 5;
             } else if (p.type === 'dmgnum') {
+                p.x += p.vx;
                 p.y += p.vy;
-                p.vy *= 0.94;
+                p.vy += 0.2; // Gravity pull down
+                p.vx *= 0.9;
+                if (p.scale > 1) p.scale -= 0.05; // Shrink dynamically
             } else if (p.type === 'chunk') {
                 p.x += p.vx;
                 p.y += p.vy;
@@ -1584,13 +1632,13 @@ const VFX = {
             ctx.globalAlpha = alpha;
 
             if (p.type === 'dust') {
+                const s = Math.max(1, Math.round(p.size * alpha)); // Smooth pixel shrinkage
                 ctx.fillStyle = p.color;
-                ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
-                // 1px shadow pixel for depth
+                ctx.fillRect(Math.round(p.x), Math.round(p.y), s, s);
                 if (p.shadow) {
                     ctx.globalAlpha = alpha * 0.4;
                     ctx.fillStyle = '#000';
-                    ctx.fillRect(Math.round(p.x) + 2, Math.round(p.y) + 2, p.size, p.size);
+                    ctx.fillRect(Math.round(p.x) + 2, Math.round(p.y) + 2, s, s);
                     ctx.globalAlpha = alpha;
                     ctx.fillStyle = p.color;
                 }
@@ -1607,47 +1655,55 @@ const VFX = {
                 }
                 ctx.fillStyle = p.color;
                 ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
-                // bright white core on fresh sparks
-                if (alpha > 0.7) {
+                // Bright white core on fresh sparks
+                if (alpha > 0.6) {
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillRect(Math.round(p.x) + 1, Math.round(p.y) + 1, Math.max(1, p.size - 2), Math.max(1, p.size - 2));
+                    ctx.fillRect(Math.round(p.x) + 1, Math.round(p.y) + 1, Math.max(1, p.size - 1), Math.max(1, p.size - 1));
                 }
 
             } else if (p.type === 'impact') {
-                // Pixelated expanding ring — draw as 8 square pixels around radius
+                // Pixelated expanding ring — dynamic dot density based on radius
                 ctx.fillStyle = p.color;
                 const r = p.radius;
-                const pts = 12;
+                const pts = Math.floor(r * 1.5) + 8;
                 for (let i = 0; i < pts; i++) {
                     const a = (i / pts) * Math.PI * 2;
                     ctx.fillRect(Math.round(p.x + Math.cos(a) * r) - 2, Math.round(p.y + Math.sin(a) * r) - 2, 4, 4);
                 }
 
             } else if (p.type === 'slash') {
+                const s = Math.max(1, Math.round(p.size * alpha));
                 ctx.fillStyle = p.color;
-                ctx.fillRect(Math.round(p.x - p.size / 2), Math.round(p.y - p.size / 2), p.size, p.size);
+                ctx.fillRect(Math.round(p.x - s / 2), Math.round(p.y - s / 2), s, s);
 
             } else if (p.type === 'dmgnum') {
+                ctx.translate(Math.round(p.x), Math.round(p.y));
+                ctx.scale(p.scale || 1, p.scale || 1); // Dynamic text pop scale
+                ctx.globalAlpha = Math.min(1, alpha * 1.5);
                 ctx.font = 'bold 8px "Press Start 2P"';
                 ctx.imageSmoothingEnabled = false;
                 ctx.fillStyle = '#000';
-                ctx.fillText(p.value, Math.round(p.x) + 1, Math.round(p.y) + 1);
+                ctx.fillText(p.value, 1, 1);
                 ctx.fillStyle = p.color;
-                ctx.fillText(p.value, Math.round(p.x), Math.round(p.y));
+                ctx.fillText(p.value, 0, 0);
 
             } else if (p.type === 'chunk') {
+                const s = Math.max(0.1, alpha + 0.2); // Chunks shrink slightly as they disappear
                 ctx.translate(Math.round(p.x + p.w / 2), Math.round(p.y + p.h / 2));
                 ctx.rotate(p.rot);
+                ctx.scale(s, s);
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(p.img, -p.w / 2, -p.h / 2, p.w, p.h);
 
             } else if (p.type === 'ring') {
-                ctx.strokeStyle = p.color;
-                ctx.lineWidth = 3;
-                ctx.globalAlpha = alpha * 0.7;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.stroke();
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = alpha * 0.9;
+                const r = Math.round(p.radius);
+                const points = Math.floor(r * 2.5) + 8;
+                for (let i = 0; i < points; i++) {
+                    const a = (i / points) * Math.PI * 2;
+                    ctx.fillRect(Math.round(p.x + Math.cos(a) * r) - 1.5, Math.round(p.y + Math.sin(a) * r) - 1.5, 3, 3);
+                }
 
             } else if (p.type === 'itemthrow') {
                 ctx.imageSmoothingEnabled = false;
@@ -1907,15 +1963,12 @@ class Player {
 
         // Weapon slot
         this.equippedWeapon = 'fists';
-        this.weaponInventory = ['fists']; // collected weapons
+        this.weaponInventory = ['fists']; 
         this.weaponInvIndex = 0;
 
-        // Weapon swing animation
-        this.swingAngle = 0;
-        this.swingActive = false;
-        this.swingTimer = 0;
-
-        // Magic orbs
+        // Animations!
+        this.walkBob = 0;
+        this.idleBob = 0;
         this.magicOrbs = 0;
         this.orbCooldown = 0;
     }
@@ -1931,7 +1984,7 @@ class Player {
         if (Input.left) dx -= this.speed;
         if (Input.right) dx += this.speed;
 
-        // Hard speed cap so boots can't make you the Flash
+        // Hard speed cap
         const MAX_SPEED = 7.5;
         if (this.speed > MAX_SPEED) this.speed = MAX_SPEED;
 
@@ -1941,14 +1994,19 @@ class Player {
             dy *= 0.707;
         }
 
+        // Animation timers
         if (dx !== 0 || dy !== 0) {
+            this.walkBob += (Math.abs(dx) + Math.abs(dy)) * 0.06; // Increment walk cycle
             // Update direction for attacks
             if (Math.abs(dx) > Math.abs(dy)) {
                 this.dir = { x: dx > 0 ? 1 : -1, y: 0 };
             } else {
                 this.dir = { x: 0, y: dy > 0 ? 1 : -1 };
             }
+        } else {
+            this.walkBob = 0; // Reset walk cycle if still
         }
+        this.idleBob += 0.05; // Constant breathing cycle
 
         // Move X & Check Collision
         this.x += dx;
@@ -1966,7 +2024,7 @@ class Player {
         this.x = Math.max(0, Math.min(CANVAS_WIDTH - this.width, this.x));
         this.y = Math.max(0, Math.min(CANVAS_HEIGHT - this.height, this.y));
 
-        // Water puddle: slow player and spawn splash particles
+        // Water puddle splash particles
         if (currentRoomType === 'forest') {
             const ptx = Math.floor((this.x + this.width / 2) / TILE_SIZE);
             const pty = Math.floor((this.y + this.height / 2) / TILE_SIZE);
@@ -2022,8 +2080,7 @@ class Player {
             comboTimer--;
             if (comboTimer === 0) {
                 comboCount = 0;
-                const disp = document.getElementById('combo-display');
-                disp.classList.remove('visible');
+                document.getElementById('combo-display').classList.remove('visible');
             }
         }
 
@@ -2041,7 +2098,6 @@ class Player {
     }
 
     checkWallCollision() {
-        // Check 4 corners of bounding box against room map
         const corners = [
             {x: this.x + 2, y: this.y + 2},
             {x: this.x + this.width - 2, y: this.y + 2},
@@ -2052,10 +2108,10 @@ class Player {
         for (let p of corners) {
             const tx = Math.floor(p.x / TILE_SIZE);
             const ty = Math.floor(p.y / TILE_SIZE);
-            if (roomMap[ty] && roomMap[ty][tx] === 1) return true; // 1 is Wall
-            if (roomMap[ty] && roomMap[ty][tx] === 4) return true; // 4 is Bush (solid)
-            if (roomMap[ty] && roomMap[ty][tx] === 5) return true; // 5 is Tree (solid)
-            // 2 is door, if doors are closed act like a wall
+            if (roomMap[ty] && roomMap[ty][tx] === 1) return true; // Wall
+            if (roomMap[ty] && roomMap[ty][tx] === 4) return true; // Bush
+            if (roomMap[ty] && roomMap[ty][tx] === 5) return true; // Tree
+            if (roomMap[ty] && roomMap[ty][tx] === 6) return true; // Tree Boundary
             if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
         }
         return false;
@@ -2075,16 +2131,14 @@ class Player {
 
         // ---- SPECIAL: Ground Slam (Hammer) ----
         if (wep.special === 'groundslam') {
-            screenShake = 18;
-            if (navigator.vibrate) navigator.vibrate([30, 10, 30]);
-            // Big shockwave ring
+            screenShake = 22; // EXTRA SHAKE
+            if (navigator.vibrate) navigator.vibrate([40, 10, 40]);
             VFX.spawnDeathFlash(cx, cy, '#f39c12');
             VFX.spawnDeathFlash(cx, cy, '#ffffff');
             VFX.spawnDust(cx, cy, 24, '#f39c12');
             VFX.spawnDust(cx, cy, 12, '#ffffff');
-            // Floor crack decal
             floorCracks.push({ x: cx - 16, y: cy - 16, life: 300, maxLife: 300 });
-            // AOE damage all enemies in radius
+            
             const slamR = 96;
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const e = enemies[i];
@@ -2221,7 +2275,6 @@ class Player {
         const wep = WEAPONS[weaponKey];
         if (!wep) return;
         this.equippedWeapon = weaponKey;
-        // Adjust attack cooldown based on weapon
         this.attackCooldown = wep.cooldown;
         updateWeaponHUD();
     }
@@ -2239,7 +2292,6 @@ class Player {
         }
         this.weaponInvIndex = this.weaponInventory.indexOf(weaponKey);
         this.equipWeapon(weaponKey);
-        // Show weapon notification
         const notify = document.getElementById('weapon-notify');
         const wep = WEAPONS[weaponKey];
         notify.innerText = '⚔ ' + wep.name + ' [' + wep.rarity.toUpperCase() + ']';
@@ -2251,7 +2303,7 @@ class Player {
     takeDamage(amt) {
         if (this.iFrames === 0) {
             this.hp -= amt;
-            this.iFrames = 30; // Half a second of invincibility
+            this.iFrames = 30; 
             screenShake = 10;
             updateUI();
             if (this.hp <= 0) {
@@ -2263,50 +2315,90 @@ class Player {
     draw() {
         if (this.iFrames > 0 && Math.floor(Date.now() / 100) % 2 === 0) return;
 
-        ctx.save();
-        ctx.imageSmoothingEnabled = false;
-
-        // Flip sprite to face movement direction
-        if (this.dir.x < 0) {
-            ctx.translate(this.x + this.width, this.y);
-            ctx.scale(-1, 1);
-            ctx.drawImage(Textures.player, 0, 0, this.width, this.height);
+        // Calculate squish/stretch for awesome waddling animations
+        let sqX = 1.0;
+        let sqY = 1.0;
+        let rot = 0;
+        let yOff = 0;
+        
+        if (this.walkBob > 0) {
+            // Waddling bounce
+            yOff = -Math.abs(Math.sin(this.walkBob)) * 3;
+            sqX = 1 + Math.sin(this.walkBob * 2) * 0.1;
+            sqY = 1 - Math.sin(this.walkBob * 2) * 0.1;
+            rot = Math.sin(this.walkBob) * 0.15;
         } else {
-            ctx.drawImage(Textures.player, this.x, this.y, this.width, this.height);
+            // Idle breathing
+            sqX = 1 + Math.sin(this.idleBob) * 0.03;
+            sqY = 1 - Math.sin(this.idleBob) * 0.05;
         }
 
+        const cx = this.x + this.width / 2;
+        const cy = this.y + this.height / 2;
+
+        // Draw dynamic breathing shadow
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(cx, this.y + this.height - 2, (this.width * 0.4) * sqX, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
-        // Weapon swing arc indicator
-        if (this.isAttacking) {
-            const wep = WEAPONS[this.equippedWeapon];
-            const range = wep.range;
-            const cx2 = this.x + this.width / 2;
-            const cy2 = this.y + this.height / 2;
-            const flashAlpha = (this.attackTimer / wep.cooldown) * 0.45;
+        // Draw Player Sprite
+        ctx.save();
+        ctx.translate(cx, cy + yOff);
+        ctx.rotate(rot);
+        ctx.scale(this.dir.x < 0 ? -sqX : sqX, sqY); // Flip based on direction
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(Textures.player, -this.width / 2, -this.height / 2, this.width, this.height);
+        ctx.restore();
+
+        // Beautiful Physical Weapon Rendering!
+        const wep = WEAPONS[this.equippedWeapon];
+        if (wep.texture && Textures[wep.texture]) {
             ctx.save();
-            ctx.globalAlpha = flashAlpha;
-            if (wep.aoe === 'arc') {
-                // Wide arc sweep
-                const baseA = Math.atan2(this.dir.y, this.dir.x);
-                ctx.strokeStyle = wep.attackColor;
-                ctx.lineWidth = 6;
-                ctx.beginPath();
-                ctx.arc(cx2, cy2, range * 0.85, baseA - Math.PI * 0.6, baseA + Math.PI * 0.6);
-                ctx.stroke();
-            } else if (wep.aoe === 'ground') {
-                // Circle for hammer AOE
-                ctx.strokeStyle = wep.attackColor;
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.arc(cx2, cy2, 96, 0, Math.PI * 2);
-                ctx.stroke();
+            ctx.imageSmoothingEnabled = false;
+            let wepX = cx + (this.dir.x * 12);
+            let wepY = cy + yOff + 4;
+            let wepRot = this.dir.x > 0 ? Math.PI/6 : -Math.PI/6;
+
+            // Attack animation swing
+            if (this.isAttacking) {
+                const progress = 1 - (this.attackTimer / wep.cooldown);
+                const arc = Math.PI * 1.2; // Huge 216 degrees swing
+                const startAngle = this.dir.x > 0 ? -Math.PI/2 : Math.PI/2;
+                wepRot = startAngle + (this.dir.x > 0 ? arc * progress : -arc * progress);
+                
+                // Motion blur effect trails
+                ctx.globalAlpha = 0.4;
+                ctx.translate(wepX, wepY);
+                ctx.rotate(wepRot - (this.dir.x > 0 ? 0.3 : -0.3));
+                if (this.dir.x < 0) ctx.scale(-1, 1);
+                ctx.drawImage(Textures[wep.texture], -16, -32, 32, 32);
+                
+                // Reset for main draw
+                if (this.dir.x < 0) ctx.scale(-1, 1);
+                ctx.rotate(this.dir.x > 0 ? 0.3 : -0.3); 
+                ctx.globalAlpha = 1.0;
             } else {
-                const sx = cx2 + this.dir.x * range - 12;
-                const sy = cy2 + this.dir.y * range - 12;
-                ctx.fillStyle = wep.attackColor;
-                ctx.fillRect(Math.round(sx), Math.round(sy), 24, 24);
+                ctx.translate(wepX, wepY);
+                ctx.rotate(wepRot + Math.sin(this.idleBob)*0.1); // Idle weapon bob
             }
+            
+            // Flip weapon sprite if facing left
+            if (this.dir.x < 0) ctx.scale(-1, 1);
+            // Draw actual weapon (origin at handle)
+            ctx.drawImage(Textures[wep.texture], -16, -32, 32, 32);
+            ctx.restore();
+            
+        } else if (this.isAttacking) {
+            // Draw a quick pixel punch for fists!
+            ctx.save();
+            const progress = Math.sin((1 - (this.attackTimer / wep.cooldown)) * Math.PI); // Smooth in-and-out punch
+            let punchDist = progress * 18;
+            ctx.fillStyle = '#ffccaa'; // Skin color
+            ctx.fillRect(cx + (this.dir.x * punchDist) + (this.dir.x*4) - 4, cy + yOff - 2, 8, 8);
             ctx.restore();
         }
 
@@ -2315,7 +2407,7 @@ class Player {
         if (moving && Math.random() < 0.12) {
             VFX.particles.push({
                 type: 'dust',
-                x: this.x + this.width / 2 + (Math.random() - 0.5) * 6,
+                x: cx + (Math.random() - 0.5) * 6,
                 y: this.y + this.height - 2,
                 vx: (Math.random() - 0.5) * 0.4,
                 vy: 0.3 + Math.random() * 0.3,
@@ -2394,6 +2486,9 @@ class Enemy {
         this.squishX = 1;
         this.squishY = 1;
         this.squishTimer = 0;
+        
+        // Track visual orientation
+        this.facing = 1; 
     }
 
     update() {
@@ -2408,6 +2503,9 @@ class Enemy {
         let dx = player.x - this.x;
         let dy = player.y - this.y;
         let dist = Math.sqrt(dx * dx + dy * dy);
+        
+        // Keep sprite flipped toward player
+        if (dx !== 0) this.facing = dx > 0 ? 1 : -1;
 
         if (dist > 0) {
             let vx = (dx / dist) * this.speed;
@@ -2508,6 +2606,9 @@ class Enemy {
             const tx = Math.floor(p.x / TILE_SIZE);
             const ty = Math.floor(p.y / TILE_SIZE);
             if (roomMap[ty] && roomMap[ty][tx] === 1) return true; 
+            if (roomMap[ty] && roomMap[ty][tx] === 4) return true; 
+            if (roomMap[ty] && roomMap[ty][tx] === 5) return true; 
+            if (roomMap[ty] && roomMap[ty][tx] === 6) return true; 
             if (!doorsOpen && roomMap[ty] && roomMap[ty][tx] === 2) return true;
         }
         return false;
@@ -2531,10 +2632,17 @@ class Enemy {
         ctx.fill();
         ctx.restore();
 
-        // Draw sprite with squish transform
+        // Draw sprite with squish & flip transform
         ctx.save();
         ctx.translate(cx, cy + bobOffset);
-        ctx.scale(this.squishX, this.squishY);
+        
+        // Add a waddle tilt to walking enemies
+        let rot = this.type === 'slime' ? 0 : Math.sin(this.bob) * 0.15;
+        ctx.rotate(rot);
+        
+        // Flip sprite based on movement tracking
+        ctx.scale(this.facing < 0 ? -this.squishX : this.squishX, this.squishY);
+        
         ctx.imageSmoothingEnabled = false;
         if (this.type === 'ghost' || this.type === 'wraith') {
             ctx.globalAlpha = this.phasing ? 0.25 : 0.78 + Math.sin(this.bob * 0.5) * 0.18;
@@ -2936,12 +3044,19 @@ let currentRoomType = 'normal';
 
 function generateRoomMap() {
     // Pick a room type (weighted toward normal early on)
-    const pool = currentRoom < 4
-        ? ['normal', 'normal', 'normal']
-        : currentRoom < 8
-        ? ['normal', 'normal', 'ice', 'crypt', 'hall']
-        : ROOM_TYPES;
-    currentRoomType = pool[Math.floor(Math.random() * pool.length)];
+    let nextRoomType;
+    if (currentRoomType === 'hall' && currentRoom > 1) {
+        // Force the outdoor room to appear right after the hall
+        nextRoomType = 'outdoor';
+    } else {
+        const pool = currentRoom < 4
+            ? ['normal', 'normal', 'normal']
+            : currentRoom < 8
+            ? ['normal', 'normal', 'ice', 'crypt', 'hall']
+            : ROOM_TYPES;
+        nextRoomType = pool[Math.floor(Math.random() * pool.length)];
+    }
+    currentRoomType = nextRoomType;
 
     roomMap = [];
     for (let y = 0; y < ROWS; y++) {
@@ -3062,23 +3177,61 @@ function generateRoomMap() {
             if (roomMap[ROWS-3-i]) roomMap[ROWS-3-i][COLS-3-i] = 1;
         }
     } else if (currentRoomType === 'outdoor') {
-        // Outdoor: no inner walls — pure open field. Trees placed as solid tile=5 markers
-        // Only boundary walls remain. Remove all doors (open exit in all 4 directions)
-        // Place tree trunk tiles (solid=1) in natural clusters
-        const treeSpots = [];
-        const clusterCount = 3 + Math.floor(Math.random() * 3);
-        for (let c = 0; c < clusterCount; c++) {
-            const tx = 3 + Math.floor(Math.random() * (COLS - 6));
-            const ty = 3 + Math.floor(Math.random() * (ROWS - 6));
-            treeSpots.push({tx, ty});
-            roomMap[ty][tx] = 5; // tree tile value 5 = tree trunk (solid, drawn specially)
-            // Occasionally a second tree in cluster
-            if (Math.random() < 0.5 && tx + 2 < COLS - 2) {
-                roomMap[ty][tx + 2] = 5;
-                treeSpots.push({tx: tx+2, ty});
+        const midX = Math.floor(COLS/2);
+        const midY = Math.floor(ROWS/2);
+
+        // Turn boundaries into dense trees (6) instead of stone walls (1)
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                if (x === 0 || x === COLS - 1 || y === 0 || y === ROWS - 1) {
+                    // Keep doors clear
+                    if ((x === midX && (y === 0 || y === ROWS - 1)) || (y === midY && (x === 0 || x === COLS - 1))) {
+                        continue; 
+                    }
+                    roomMap[y][x] = 6; 
+                }
             }
         }
-        // Store tree positions for leaf engine
+
+        // Carve dirt paths (7) cross-secting the room between the doors
+        for (let x = 1; x < COLS - 1; x++) {
+            roomMap[midY][x] = 7;
+            if (Math.random() < 0.5) roomMap[midY-1][x] = 7;
+            if (Math.random() < 0.5) roomMap[midY+1][x] = 7;
+        }
+        for (let y = 1; y < ROWS - 1; y++) {
+            roomMap[y][midX] = 7;
+            if (Math.random() < 0.5) roomMap[y][midX-1] = 7;
+            if (Math.random() < 0.5) roomMap[y][midX+1] = 7;
+        }
+
+        // Central clearing / wider dirt
+        for(let cy = -2; cy <= 2; cy++) {
+            for(let cx = -2; cx <= 2; cx++) {
+                if (Math.random() < 0.8) roomMap[midY + cy][midX + cx] = 7;
+            }
+        }
+
+        // Scatter beautiful elements in the pure grass areas
+        const treeSpots = [];
+        for (let y = 1; y < ROWS - 1; y++) {
+            for (let x = 1; x < COLS - 1; x++) {
+                if (roomMap[y][x] === 0) { // If it's grass
+                    const r = Math.random();
+                    if (r < 0.05 && Math.abs(x - midX) > 3 && Math.abs(y - midY) > 3) {
+                        // Big solid tree trunk
+                        roomMap[y][x] = 5;
+                        treeSpots.push({tx: x, ty: y});
+                    } else if (r < 0.12) {
+                        // Bush
+                        roomMap[y][x] = 4;
+                    } else if (r < 0.35) {
+                        // Beautiful pixel flowers
+                        roomMap[y][x] = 8;
+                    }
+                }
+            }
+        }
         outdoorTrees = treeSpots;
     } else {
         // Normal: random pillars
@@ -3664,6 +3817,24 @@ function drawMap() {
                 // Subtle canopy shadow on the floor below
                 ctx.fillStyle = 'rgba(0,0,0,0.14)';
                 ctx.fillRect(px + 2, py + 20, TILE_SIZE - 4, 10);
+            } else if (val === 6) {
+                // Dense Tree Boundary Walls
+                ctx.drawImage(Textures.floorOutdoor, px, py);
+                ctx.drawImage(Textures.wallTreeBoundary, px, py);
+                // Dark shade over boundaries for depth
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+            } else if (val === 7) {
+                // Dirt Path
+                ctx.drawImage(Textures.floorDirt, px, py);
+            } else if (val === 8) {
+                // Pixel Flowers
+                ctx.drawImage(Textures.floorFlower, px, py);
+                // Dappled light over flowers too
+                if ((x * 7 + y * 13) % 11 === 0) {
+                    ctx.fillStyle = 'rgba(116,198,157,0.18)';
+                    ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                }
             } else if (val === 2) {
                 if (doorsOpen) {
                     ctx.drawImage(Textures.doorOpen, px, py);
@@ -3731,8 +3902,25 @@ function loop() {
         return o.life > 0;
     });
 
-    // Outdoor leaf engine update
-    if (currentRoomType === 'outdoor') updateLeaves();
+    // Outdoor leaf & ambiance engine update
+    if (currentRoomType === 'outdoor') {
+        updateLeaves();
+        // Spawn glowing fireflies randomly across the room
+        if (Math.random() < 0.12) {
+            VFX.particles.push({
+                type: 'spark',
+                x: Math.random() * CANVAS_WIDTH,
+                y: Math.random() * CANVAS_HEIGHT,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4 - 0.1,
+                life: 60 + Math.random() * 80,
+                maxLife: 140,
+                size: Math.random() > 0.5 ? 2 : 1,
+                color: Math.random() < 0.5 ? '#f1c40f' : '#b7e4c7',
+                tail: [] // Very short tail, giving a subtle glow trail
+            });
+        }
+    }
 
     // Lava room: periodic floor damage
     if (currentRoomType === 'lava') {
