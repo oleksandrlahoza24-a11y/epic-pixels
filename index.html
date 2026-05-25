@@ -86,44 +86,38 @@
             gap: 3px;
         }
 
-        .hp-bar-outer {
-            width: 80px;
+        /* Segmented pixel heart bar */
+        #hp-hearts {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }
+
+        .hp-heart {
+            width: 10px;
             height: 10px;
-            background: #1a0000;
-            outline: 2px solid #000;
-            box-shadow: inset 1px 1px 0px #000;
             image-rendering: pixelated;
+            flex-shrink: 0;
+            transition: opacity 0.08s steps(1);
         }
 
-        .hp-bar-inner {
-            height: 100%;
-            background: #e74c3c;
-            box-shadow: inset 0 2px 0 #ff7070;
-            transition: width 0.15s steps(10);
-        }
-
-        .hp-bar-inner.high {
-            background: #2ecc71;
-            box-shadow: inset 0 2px 0 #6eff9a;
-        }
-
-        .hp-bar-inner.mid {
-            background: #f1c40f;
-            box-shadow: inset 0 2px 0 #ffe870;
-        }
-
-        .hp-bar-inner.low {
-            background: #e74c3c;
-            box-shadow: inset 0 2px 0 #ff7070;
-        }
-
+        /* Keep numeric text */
         .hp-text {
-            font-size: 10px;
+            font-size: 8px;
             color: #fff;
             text-shadow: 1px 1px 0 #000;
             font-family: 'Press Start 2P', monospace;
             letter-spacing: 0px;
-            min-width: 52px;
+            min-width: 44px;
+        }
+
+        /* Legacy bar kept hidden — used by old code path */
+        .hp-bar-outer {
+            display: none;
+        }
+
+        .hp-bar-inner {
+            display: none;
         }
 
         /* Stat value badge */
@@ -540,9 +534,7 @@
                 </svg>
                 <span class="stat-label">HP</span>
                 <div class="hp-bar-wrap">
-                    <div class="hp-bar-outer">
-                        <div class="hp-bar-inner high" id="ui-hp-bar" style="width:100%"></div>
-                    </div>
+                    <div id="hp-hearts"></div>
                     <span class="hp-text"><span id="ui-hp">100</span>/<span id="ui-maxhp">100</span></span>
                 </div>
             </div>
@@ -872,6 +864,17 @@ const GRIDS = {
         [0,0,1,16,16,1,0,0],
         [0,0,0,1,1,0,0,0]
     ],
+        itemDmgUp: [    // Damage up crystal shard — glowing red gem
+        [0,0,1,1,1,0,0,0],
+        [0,1,6,6,7,1,0,0],
+        [1,6,6,7,6,6,1,0],
+        [1,6,7,6,6,6,1,0],
+        [1,6,6,6,7,6,1,0],
+        [0,1,6,6,6,1,0,0],
+        [0,0,1,6,1,0,0,0],
+        [0,0,0,1,0,0,0,0]
+    ],
+
     itemKey: [    // Key: unlocks a bonus room
         [0,0,0,1,1,1,0,0],
         [0,0,1,7,7,7,1,0],
@@ -2127,6 +2130,12 @@ class Item {
             }
         }
 
+        // Remap 'sword' drops to use the damage crystal texture
+        if (!this._texResolved) {
+            this._texResolved = true;
+            if (this.type === 'sword') this._overrideTex = Textures.itemDmgUp;
+        }
+
         // Pick up
         if (player.x < this.x + this.width && player.x + player.width > this.x &&
             player.y < this.y + this.height && player.y + player.height > this.y) {
@@ -2136,17 +2145,16 @@ class Item {
 
             const rarityMult = this.rarity === 'legendary' ? 3 : this.rarity === 'rare' ? 2 : this.rarity === 'uncommon' ? 1.5 : 1;
             if (this.type === 'heart') {
-                player.hp = Math.min(player.maxHp, player.hp + Math.round(25 * rarityMult));
+                player.hp = Math.min(player.maxHp, player.hp + Math.round(35 * rarityMult));
             } else if (this.type === 'sword') {
-                player.dmg += Math.round(5 * rarityMult);
+                player.dmg += Math.round(12 * rarityMult);
             } else if (this.type === 'boot') {
-                player.speed += 0.2 * rarityMult;
+                player.speed += 0.35 * rarityMult;
             } else if (this.type === 'shield') {
-                player.maxHp += Math.round(20 * rarityMult);
-                player.hp = Math.min(player.maxHp, player.hp + Math.round(20 * rarityMult));
+                player.maxHp += Math.round(30 * rarityMult);
+                player.hp = Math.min(player.maxHp, player.hp + Math.round(30 * rarityMult));
             } else if (this.type === 'orb') {
-                // Orb: grant a single magic bolt on next attack
-                player.magicOrbs = (player.magicOrbs || 0) + Math.round(1 * rarityMult);
+                player.magicOrbs = (player.magicOrbs || 0) + Math.round(3 * rarityMult);
             } else if (this.type === 'key') {
                 score += 500;
             } else if (this.type === 'weapon') {
@@ -2579,14 +2587,15 @@ function spawnEnemies() {
 }
 
 function rollDrop(x, y) {
-    if (Math.random() < 0.35) {
+    if (Math.random() < 0.50) {
         const rand = Math.random();
         let type = 'heart';
-        if (rand > 0.50 && rand <= 0.63) type = 'boot';
-        if (rand > 0.63 && rand <= 0.74) type = 'shield';
-        if (rand > 0.74 && rand <= 0.83) type = 'orb';
-        if (rand > 0.83 && rand <= 0.90) type = 'key';
-        if (rand > 0.90) type = 'weapon'; // weapon drop!
+        if (rand > 0.38 && rand <= 0.50) type = 'sword';
+        if (rand > 0.50 && rand <= 0.60) type = 'boot';
+        if (rand > 0.60 && rand <= 0.70) type = 'shield';
+        if (rand > 0.70 && rand <= 0.80) type = 'orb';
+        if (rand > 0.80 && rand <= 0.88) type = 'key';
+        if (rand > 0.88) type = 'weapon'; // weapon drop!
         if (type === 'weapon') {
             const pool = WEAPON_DROP_POOL.filter(k => WEAPONS[k].rarity !== 'legendary');
             const wKey = pool[Math.floor(Math.random() * pool.length)];
@@ -2818,6 +2827,49 @@ function updateOrbBadge() {
  */
 let isGameOver = false;
 
+// ---- Pixel heart sprites (drawn once, reused) ----
+const _heartCanvas = (() => {
+    const C = {}; // full, half, empty
+    function make(type) {
+        const c = document.createElement('canvas');
+        c.width = 10; c.height = 10;
+        const x = c.getContext('2d');
+        x.imageSmoothingEnabled = false;
+        const P = 2; // pixel size
+        // shape mask (5x5 grid scaled 2x)
+        const SHAPE = [
+            [0,1,0,1,0],
+            [1,1,1,1,1],
+            [1,1,1,1,1],
+            [0,1,1,1,0],
+            [0,0,1,0,0]
+        ];
+        for (let r = 0; r < 5; r++) {
+            for (let c2 = 0; c2 < 5; c2++) {
+                if (!SHAPE[r][c2]) continue;
+                const px = c2 * P, py = r * P;
+                if (type === 'empty') {
+                    x.fillStyle = (r === 0 && c2 === 1) || (r === 0 && c2 === 3) ? '#3a0000' : '#220000';
+                } else if (type === 'half') {
+                    x.fillStyle = c2 < 3 ? (r === 0 ? '#ff9090' : '#e74c3c') : ((r === 0 && c2 === 3) ? '#3a0000' : '#220000');
+                } else {
+                    // full — top row highlight, main red, dark shadow bottom
+                    if (r === 0) x.fillStyle = '#ff9090';
+                    else if (r >= 3) x.fillStyle = '#c0392b';
+                    else x.fillStyle = '#e74c3c';
+                }
+                x.fillRect(px, py, P, P);
+            }
+        }
+        return c;
+    }
+    C.full  = make('full');
+    C.half  = make('half');
+    C.empty = make('empty');
+    return C;
+})();
+
+let _prevHpPct = -1;
 function updateUI() {
     const hp = Math.floor(player.hp);
     const maxHp = player.maxHp;
@@ -2829,10 +2881,42 @@ function updateUI() {
     document.getElementById('ui-room').innerText = roomLabel;
     document.getElementById('ui-score').innerText = score;
 
-    const pct = Math.max(0, Math.min(100, (hp / maxHp) * 100));
-    const bar = document.getElementById('ui-hp-bar');
-    bar.style.width = pct + '%';
-    bar.className = 'hp-bar-inner ' + (pct > 60 ? 'high' : pct > 30 ? 'mid' : 'low');
+    const pct = Math.max(0, Math.min(1, hp / maxHp));
+    if (pct === _prevHpPct) return;
+    _prevHpPct = pct;
+
+    // Rebuild heart icons (1 heart = 10% HP, max 10 hearts)
+    const container = document.getElementById('hp-hearts');
+    const HEARTS = 10;
+    const filled = pct * HEARTS;       // e.g. 6.4
+    const fullCount  = Math.floor(filled);
+    const hasHalf    = (filled - fullCount) >= 0.5;
+
+    // Clear and rebuild only when needed
+    while (container.children.length < HEARTS) {
+        const img = document.createElement('canvas');
+        img.width = 10; img.height = 10;
+        img.className = 'hp-heart';
+        img.getContext('2d').imageSmoothingEnabled = false;
+        container.appendChild(img);
+    }
+
+    for (let i = 0; i < HEARTS; i++) {
+        const c = container.children[i];
+        const cx = c.getContext('2d');
+        cx.clearRect(0, 0, 10, 10);
+        const src = i < fullCount ? _heartCanvas.full
+                  : (i === fullCount && hasHalf) ? _heartCanvas.half
+                  : _heartCanvas.empty;
+        cx.drawImage(src, 0, 0);
+
+        // Pulse the last full heart when low HP
+        if (pct < 0.3 && i === fullCount - 1) {
+            c.style.transform = `scale(${1 + 0.18 * Math.abs(Math.sin(Date.now() / 220))})`;
+        } else {
+            c.style.transform = '';
+        }
+    }
 }
 
 function updateWeaponHUD() {
@@ -2916,14 +3000,40 @@ function drawMap() {
                 ctx.fillRect(px, py, TILE_SIZE, 2);
 
             } else if (val === 3) {
-                // Water puddle — draw forest floor underneath, then water on top
+                // Water puddle — layered animated reflections
                 ctx.drawImage(Textures.floorForest, px, py);
-                ctx.drawImage(Textures.floorWater, px, py);
-                // Ripple shimmer
-                const ripple = (Math.floor(Date.now() / 400) + x + y) % 3;
-                if (ripple === 0) {
-                    ctx.fillStyle = 'rgba(93,173,226,0.22)';
-                    ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, TILE_SIZE - 8);
+
+                // Deep water base
+                ctx.fillStyle = '#1a4a6e';
+                ctx.fillRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+
+                // Animated water color bands (slow scroll)
+                const wt = Date.now() / 800;
+                const wOff = Math.floor(Math.sin(wt + x * 0.7 + y * 0.5) * 3);
+                ctx.fillStyle = 'rgba(41,128,185,0.65)';
+                ctx.fillRect(px + 2, py + 2 + wOff, TILE_SIZE - 4, 8);
+                ctx.fillStyle = 'rgba(52,152,219,0.45)';
+                ctx.fillRect(px + 2, py + 12 + wOff, TILE_SIZE - 4, 6);
+
+                // Pixel highlight streaks (reflection lines)
+                const rPhase = Math.floor(Date.now() / 300);
+                const rOff1 = ((rPhase + x * 3 + y * 2) % 5);
+                const rOff2 = ((rPhase + x * 2 + y * 5 + 2) % 7);
+                ctx.fillStyle = 'rgba(174,214,241,0.55)';
+                ctx.fillRect(px + 4, py + 4 + rOff1 * 3, TILE_SIZE - 16, 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.22)';
+                ctx.fillRect(px + 10, py + 6 + rOff2 * 2, TILE_SIZE - 20, 2);
+
+                // Thin dark edge on all 4 sides to frame the puddle
+                ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(px + 2.5, py + 2.5, TILE_SIZE - 5, TILE_SIZE - 5);
+
+                // Occasional sparkle pixel
+                const sparkle = (Math.floor(Date.now() / 150) + x * 7 + y * 11) % 20;
+                if (sparkle === 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(px + 6 + (x * 5) % 14, py + 6 + (y * 7) % 14, 2, 2);
                 }
             } else if (val === 4) {
                 // Bush cluster — draw floor underneath, then bush on top
@@ -3062,6 +3172,12 @@ function loop() {
     VFX.draw();
 
     ctx.restore(); // Undo screen shake translation
+
+    // Animate low-HP heart pulse every frame (no state change needed)
+    if (player.hp / player.maxHp < 0.3) {
+        _prevHpPct = -1; // force redraw so pulse animates
+        updateUI();
+    }
 
     requestAnimationFrame(loop);
 }
