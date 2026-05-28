@@ -3,7 +3,7 @@
 //  models.js
 // ============================================================
 
-const OPENROUTER_API_KEY = "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";
+const OPENROUTER_API_KEY = "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";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 
 // ── Image Generation (via Pollinations – free, no key needed) ──
